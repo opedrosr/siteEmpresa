@@ -6,7 +6,6 @@ import {
   Database,
   Layers3,
   Menu,
-  MonitorSmartphone,
   Network,
   Send,
   Sparkles,
@@ -14,6 +13,9 @@ import {
   Zap,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+
+const whatsappNumber = '5531983994883'
+const whatsappLink = `https://wa.me/${whatsappNumber}`
 
 const projects = [
   {
@@ -191,6 +193,7 @@ function App() {
           <span className="brand-mark">
             <Sparkles size={15} />
           </span>
+
           <span>
             APORTE<span className="brand-dot">.</span>
           </span>
@@ -223,7 +226,12 @@ function App() {
           </a>
         </nav>
 
-        <a href="#consultar" className="header-cta glass-button">
+        <a
+          href={whatsappLink}
+          className="header-cta glass-button"
+          target="_blank"
+          rel="noreferrer"
+        >
           Vamos conversar
           <ArrowUpRight size={15} />
         </a>
@@ -329,10 +337,7 @@ function App() {
           </div>
         </section>
 
-        <section
-          id="empresa"
-          className="projects-section page-section"
-        >
+        <section id="empresa" className="projects-section page-section">
           <div className="section-heading scroll-reveal">
             <span className="section-number">01 / A EMPRESA</span>
 
@@ -364,8 +369,7 @@ function App() {
 
                   <strong>
                     estratégia
-                    <br />
-                    + tecnologia
+                    <br />+ tecnologia
                   </strong>
 
                   <div className="window-bars">
@@ -436,9 +440,7 @@ function App() {
             {services.map((service, index) => (
               <article
                 key={service.number}
-                className={`solution-card ${service.className} ${
-                  index === 0 ? 'scroll-reveal' : 'scroll-reveal'
-                }`}
+                className={`solution-card ${service.className} scroll-reveal`}
                 style={{ transitionDelay: `${index * 90}ms` }}
               >
                 <div className="card-top">
@@ -542,6 +544,7 @@ function App() {
                     <>
                       <div className="preview-rebeca-nav">
                         <span>RB</span>
+
                         <div>
                           <i />
                           <i />
@@ -551,6 +554,7 @@ function App() {
 
                       <div className="preview-rebeca-content">
                         <span>NAIL DESIGNER</span>
+
                         <h3>
                           beleza em
                           <br />
@@ -668,7 +672,12 @@ function App() {
                 ))}
               </div>
 
-              <a href="#consultar" className="text-link">
+              <a
+                href={whatsappLink}
+                className="text-link"
+                target="_blank"
+                rel="noreferrer"
+              >
                 Quero um projeto assim
                 <ArrowUpRight size={16} />
               </a>
@@ -701,15 +710,19 @@ function App() {
                 onClick={() => setActiveProject(index)}
                 style={{ transitionDelay: `${index * 80}ms` }}
               >
-                <div className={`portfolio-card-visual card-${project.visual}`}>
+                <div
+                  className={`portfolio-card-visual card-${project.visual}`}
+                >
                   {project.visual === 'rebeca' && (
                     <>
                       <span>RB</span>
+
                       <strong>
                         Studio
                         <br />
                         <em>Rebeca</em>
                       </strong>
+
                       <div className="card-hand" />
                     </>
                   )}
@@ -717,6 +730,7 @@ function App() {
                   {project.visual === 'agenda' && (
                     <>
                       <div className="mini-dashboard-sidebar" />
+
                       <div className="mini-dashboard-content">
                         <span>AGENDA</span>
                         <strong>12</strong>
@@ -730,11 +744,13 @@ function App() {
                   {project.visual === 'clinic' && (
                     <>
                       <span>AURA</span>
+
                       <strong>
                         sua saúde,
                         <br />
                         sua <em>essência.</em>
                       </strong>
+
                       <div className="card-clinic-orb" />
                     </>
                   )}
@@ -903,7 +919,7 @@ function App() {
 
           <a
             className="contact-button glass-button scroll-reveal"
-            href="https://wa.me/5531999999999"
+            href={whatsappLink}
             target="_blank"
             rel="noreferrer"
           >
@@ -923,6 +939,7 @@ function App() {
           <span className="brand-mark">
             <Sparkles size={15} />
           </span>
+
           <span>
             APORTE<span className="brand-dot">.</span>
           </span>
@@ -938,7 +955,11 @@ function App() {
             <ArrowUpRight size={12} />
           </a>
 
-          <a href="#consultar">
+          <a
+            href={whatsappLink}
+            target="_blank"
+            rel="noreferrer"
+          >
             Contato
             <ArrowUpRight size={12} />
           </a>
