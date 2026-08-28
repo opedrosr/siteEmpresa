@@ -15,7 +15,7 @@ import {
 import { useEffect, useState } from 'react'
 
 const whatsappNumber = '5531983994883'
-const whatsappLink = `https://wa.me/${whatsappNumber}`
+const whatsappLink = `https://wa.me/5531983994883`
 
 const projects = [
   {
