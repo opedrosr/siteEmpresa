@@ -19,39 +19,50 @@ import Notebook3D from './components/Notebook3D'
 const whatsappNumber = '5531983994883'
 const whatsappLink = `https://wa.me/${whatsappNumber}`
 
-const projects = [
+type Project = {
+  id: string
+  name: string
+  type: string
+  description: string
+  tags: string[]
+  image: string
+  video: string
+  gallery: string[]
+}
+
+const projects: Project[] = [
   {
     id: '01',
-    name: 'Studio Rebeca',
-    type: 'Site institucional',
+    name: 'Sistema de Agendamento',
+    type: 'Sistema',
     description:
-      'Experiência digital premium criada para apresentar serviços, posicionar a marca e transformar atenção em contato.',
-    tags: ['Website', 'UX/UI', 'Conversão'],
-    accent: 'orange',
-    visual: 'rebeca',
-    url: 'studio-rebeca',
+      'Sistema de agendamento desenvolvido para permitir que clientes escolham serviços e horários enquanto o profissional acompanha seus agendamentos em um ambiente próprio.',
+    tags: ['Sistema', 'React', 'Supabase', 'Agendamento'],
+    image: '/agendamento-01-inicio.png',
+    video: '/agendamento-demo.mp4',
+    gallery: [
+      '/agendamento-01-inicio.png',
+      '/agendamento-02-servicos.png',
+      '/agendamento-03-horarios.png',
+      '/agendamento-04-confirmacao.png',
+      '/agendamento-05-painel.png',
+    ],
   },
   {
     id: '02',
-    name: 'Aporte Agenda',
-    type: 'Sistema de agendamento',
+    name: 'Site de Estética Automotiva',
+    type: 'Website / Experiência digital',
     description:
-      'Produto digital para organizar serviços, disponibilidade e agendamentos em uma operação simples.',
-    tags: ['Sistema', 'React', 'Supabase'],
-    accent: 'blue',
-    visual: 'agenda',
-    url: 'aporte-agenda',
-  },
-  {
-    id: '03',
-    name: 'Aura Clinic',
-    type: 'Experiência digital',
-    description:
-      'Conceito digital para uma clínica moderna, combinando posicionamento, clareza e experiência.',
-    tags: ['Website', 'Branding', 'UX/UI'],
-    accent: 'violet',
-    visual: 'clinic',
-    url: 'aura-clinic',
+      'Site desenvolvido para uma empresa de estética automotiva, com foco em apresentação visual, interação, serviços e condução do visitante até o contato.',
+    tags: ['Website', 'UX/UI', 'Interação', 'Mobile'],
+    image: '/automotivo-hero-interacao.png',
+    video: '/automotivo-demo.mp4',
+    gallery: [
+      '/automotivo-hero-interacao.png',
+      '/automotivo-03-servicos.png',
+      '/automotivo-antes-depois.png',
+      '/automotivo-contato.png',
+    ],
   },
 ]
 
@@ -106,6 +117,7 @@ function App() {
   const [activeProcess, setActiveProcess] = useState(0)
   const [cursor, setCursor] = useState({ x: 0, y: 0 })
   const [techRotation, setTechRotation] = useState(0)
+  const [activeGallery, setActiveGallery] = useState(0)
 
   useEffect(() => {
     let frame = 0
@@ -149,7 +161,16 @@ function App() {
     return () => observer.disconnect()
   }, [])
 
+  useEffect(() => {
+    setActiveGallery(0)
+  }, [activeProject])
+
   const currentProject = projects[activeProject]
+
+  const changeProject = (index: number) => {
+    setActiveProject(index)
+    document.getElementById('portfolio')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   return (
     <div
@@ -167,7 +188,7 @@ function App() {
       <div className="scroll-progress" style={{ width: `${scrollProgress}%` }} />
 
       <header className="site-header glass-panel">
-        <a href="#inicio" className="brand" aria-label="Aporte">
+        <a href="#inicio" className="brand" aria-label="Aporte" onClick={() => setMenuOpen(false)}>
           <span className="brand-mark"><Sparkles size={15} /></span>
           <span>APORTE<span className="brand-dot">.</span></span>
         </a>
@@ -187,7 +208,7 @@ function App() {
         <button
           className="mobile-menu glass-button"
           type="button"
-          aria-label="Abrir menu"
+          aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}
           onClick={() => setMenuOpen(value => !value)}
         >
           {menuOpen ? <X size={18} /> : <Menu size={18} />}
@@ -274,20 +295,41 @@ function App() {
           </div>
         </section>
 
+        <section className="founder-section page-section">
+          <div className="founder-copy scroll-reveal">
+            <span className="section-number">02 / QUEM ESTÁ POR TRÁS</span>
+            <h2>Tecnologia com<br /><em>visão de negócio.</em></h2>
+            <p className="founder-lead">
+              A Aporte é conduzida por <strong>Pedro Henrique</strong>, fundador da empresa.
+            </p>
+            <p>
+              O trabalho começa entendendo o que precisa ser resolvido. A partir daí,
+              design, desenvolvimento e tecnologia entram como ferramentas para construir
+              uma solução que tenha função real.
+            </p>
+            <div className="founder-signature">
+              <span>PEDRO HENRIQUE</span>
+              <small>FUNDADOR · APORTE</small>
+            </div>
+          </div>
+
+          <div className="founder-portrait scroll-reveal">
+            <div className="founder-frame" />
+            <img src="/fotoPedro.png" alt="Pedro Henrique, fundador da Aporte" />
+            <div className="founder-label glass-chip">APORTE / FOUNDER</div>
+          </div>
+        </section>
+
         <section id="servicos" className="solutions-section page-section">
           <div className="section-heading compact scroll-reveal">
-            <span className="section-number">02 / SERVIÇOS</span>
+            <span className="section-number">03 / SERVIÇOS</span>
             <h2>O que<br /><em>construímos.</em></h2>
             <p>Soluções pensadas de acordo com o estágio, objetivo e necessidade de cada empresa.</p>
           </div>
 
           <div className="solution-grid">
             {services.map((service, index) => (
-              <article
-                key={service.number}
-                className={`solution-card ${service.className} scroll-reveal`}
-                style={{ transitionDelay: `${index * 90}ms` }}
-              >
+              <article key={service.number} className={`solution-card ${service.className} scroll-reveal`} style={{ transitionDelay: `${index * 90}ms` }}>
                 <div className="card-top"><span>{service.number}</span><span>APORTE</span></div>
 
                 {index === 0 && (
@@ -319,103 +361,86 @@ function App() {
           </div>
         </section>
 
-        <section id="portfolio" className="projects-section page-section">
+        <section id="portfolio" className="portfolio-real-section page-section">
           <div className="section-heading scroll-reveal">
-            <span className="section-number">03 / PORTFÓLIO</span>
-            <h2>Projetos que<br /><em>ganharam forma.</em></h2>
-            <p>Uma seleção de experiências e produtos digitais desenvolvidos para explorar diferentes desafios e possibilidades.</p>
+            <span className="section-number">04 / PORTFÓLIO</span>
+            <h2>Projetos<br /><em>reais.</em></h2>
+            <p>Uma seleção do que já foi construído pela Aporte.</p>
           </div>
 
-          <div className="portfolio-layout scroll-reveal">
-            <div className="portfolio-feature">
-              <div className={`project-visual portfolio-project project-art-${currentProject.visual}`} data-accent={currentProject.accent}>
-                <div className="browser-bar"><span /><span /><span /><b>aporte.digital/{currentProject.url}</b></div>
-                <div className="portfolio-preview">
-                  {currentProject.visual === 'rebeca' && (
-                    <>
-                      <div className="preview-rebeca-nav"><span>RB</span><div><i /><i /><i /></div></div>
-                      <div className="preview-rebeca-content">
-                        <span>NAIL DESIGNER</span>
-                        <h3>beleza em<br /><em>cada detalhe.</em></h3>
-                        <button type="button">AGENDAR HORÁRIO</button>
-                      </div>
-                      <div className="preview-rebeca-photo"><div className="photo-glow" /><div className="hand-shape" /></div>
-                    </>
-                  )}
+          <div className="real-project-tabs scroll-reveal" role="tablist" aria-label="Projetos">
+            {projects.map((project, index) => (
+              <button
+                key={project.id}
+                type="button"
+                className={activeProject === index ? 'active' : ''}
+                onClick={() => changeProject(index)}
+                role="tab"
+                aria-selected={activeProject === index}
+              >
+                <span>{project.id}</span>
+                <strong>{project.name}</strong>
+                <small>{project.type}</small>
+              </button>
+            ))}
+          </div>
 
-                  {currentProject.visual === 'agenda' && (
-                    <>
-                      <aside className="preview-agenda-sidebar"><strong>A</strong><i /><i /><i /><i /></aside>
-                      <div className="preview-agenda-main">
-                        <div className="agenda-header">
-                          <div><span>SEGUNDA, 24</span><h3>Bom dia, Rebeca.</h3></div>
-                          <div className="agenda-avatar" />
-                        </div>
-                        <div className="agenda-cards">
-                          <div className="agenda-card agenda-card-main"><span>PRÓXIMO HORÁRIO</span><strong>09:30</strong><small>Manicure · Amanda</small></div>
-                          <div className="agenda-card"><span>AGENDAMENTOS</span><strong>12</strong><small>Hoje</small></div>
-                        </div>
-                        <div className="agenda-list"><span /><span /><span /><span /></div>
-                      </div>
-                    </>
-                  )}
-
-                  {currentProject.visual === 'clinic' && (
-                    <>
-                      <div className="preview-clinic-header"><span>AURA</span><div><i>CLÍNICA</i><i>ESPECIALIDADES</i><i>CONTATO</i></div></div>
-                      <div className="preview-clinic-content">
-                        <span>MEDICINA & BEM-ESTAR</span>
-                        <h3>Cuidar de você<br />é nossa <em>essência.</em></h3>
-                        <button type="button">CONHEÇA A CLÍNICA <ArrowUpRight size={13} /></button>
-                      </div>
-                      <div className="preview-clinic-image"><div className="clinic-sun" /><div className="clinic-portrait" /></div>
-                    </>
-                  )}
-                </div>
-                <div className="project-preview-label"><span>{currentProject.type}</span><span>{currentProject.id} / 03</span></div>
+          <article className="real-project-case scroll-reveal">
+            <div className="real-project-media">
+              <div className="real-project-image-wrap">
+                <img
+                  key={currentProject.gallery[activeGallery]}
+                  src={currentProject.gallery[activeGallery]}
+                  alt={`${currentProject.name} — visual ${activeGallery + 1}`}
+                  className="real-project-image"
+                  loading="lazy"
+                  decoding="async"
+                />
               </div>
-            </div>
 
-            <div className="portfolio-info">
-              <span className="project-count">{currentProject.id} <span>/ 03</span></span>
-              <h3>{currentProject.name}</h3>
-              <p>{currentProject.description}</p>
-              <div className="tag-list">{currentProject.tags.map(tag => <span key={tag}>{tag}</span>)}</div>
-              <a href={whatsappLink} className="text-link" target="_blank" rel="noreferrer">Quero um projeto assim <ArrowUpRight size={16} /></a>
-
-              <div className="project-switcher">
-                {projects.map((project, index) => (
-                  <button key={project.id} type="button" className={activeProject === index ? 'active' : ''} onClick={() => setActiveProject(index)}>
-                    <span>{project.id}</span><i />
+              <div className="real-project-gallery" aria-label="Galeria do projeto">
+                {currentProject.gallery.map((image, index) => (
+                  <button
+                    type="button"
+                    key={image}
+                    className={activeGallery === index ? 'active' : ''}
+                    onClick={() => setActiveGallery(index)}
+                    aria-label={`Ver imagem ${index + 1}`}
+                  >
+                    <img src={image} alt="" loading="lazy" decoding="async" />
                   </button>
                 ))}
               </div>
             </div>
-          </div>
 
-          <div className="portfolio-grid">
-            {projects.map((project, index) => (
-              <button
-                type="button"
-                key={project.id}
-                className={`portfolio-card scroll-reveal ${activeProject === index ? 'portfolio-card-active' : ''}`}
-                onClick={() => setActiveProject(index)}
-                style={{ transitionDelay: `${index * 80}ms` }}
-              >
-                <div className={`portfolio-card-visual card-${project.visual}`}>
-                  {project.visual === 'rebeca' && <><span>RB</span><strong>Studio<br /><em>Rebeca</em></strong><div className="card-hand" /></>}
-                  {project.visual === 'agenda' && <><div className="mini-dashboard-sidebar" /><div className="mini-dashboard-content"><span>AGENDA</span><strong>12</strong><i /><i /><i /></div></>}
-                  {project.visual === 'clinic' && <><span>AURA</span><strong>sua saúde,<br />sua <em>essência.</em></strong><div className="card-clinic-orb" /></>}
-                </div>
-                <div className="portfolio-card-bottom"><span>{project.name}</span><ArrowUpRight size={16} /></div>
-              </button>
-            ))}
-          </div>
+            <div className="real-project-info">
+              <div className="real-project-meta">
+                <span>{currentProject.id} / 02</span>
+                <span>{currentProject.type}</span>
+              </div>
+
+              <h3>{currentProject.name}</h3>
+              <p>{currentProject.description}</p>
+
+              <div className="tag-list">
+                {currentProject.tags.map(tag => <span key={tag}>{tag}</span>)}
+              </div>
+
+              <div className="real-project-video">
+                <div className="video-label"><span>DEMONSTRAÇÃO</span><span>PLAY</span></div>
+                <video src={currentProject.video} controls playsInline preload="metadata" />
+              </div>
+
+              <a href={whatsappLink} className="text-link" target="_blank" rel="noreferrer">
+                Quero conversar sobre um projeto <ArrowUpRight size={16} />
+              </a>
+            </div>
+          </article>
         </section>
 
         <section id="processo" className="process-section page-section">
           <div className="process-intro scroll-reveal">
-            <span className="section-number">04 / PROCESSO</span>
+            <span className="section-number">05 / PROCESSO</span>
             <h2>Como uma ideia<br />vira <em>produto.</em></h2>
             <p>Um processo claro para transformar necessidades reais em soluções digitais que façam sentido para o negócio.</p>
             <div className="process-progress"><span style={{ height: `${((activeProcess + 1) / processSteps.length) * 100}%` }} /></div>
@@ -447,7 +472,7 @@ function App() {
 
         <section className="tech-section page-section">
           <div className="tech-copy scroll-reveal">
-            <span className="section-number">05 / TECNOLOGIA</span>
+            <span className="section-number">06 / TECNOLOGIA</span>
             <h2>Ferramentas são<br />apenas parte da<br /><em>solução.</em></h2>
             <p>Escolhemos a tecnologia de acordo com o problema. O objetivo não é usar mais ferramentas, mas construir a combinação certa.</p>
           </div>
