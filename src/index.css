@@ -2761,3 +2761,127 @@ p {
     transform: none !important;
   }
 }
+/* =========================================================
+   APORTE — NOTEBOOK 3D
+========================================================= */
+
+.notebook-3d {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.notebook-3d canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Elementos gráficos do Hero ficam acima do notebook */
+
+.hero-visual .visual-label,
+.hero-visual .visual-data,
+.hero-visual .visual-line {
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* =========================================================
+   DESKTOP
+========================================================= */
+
+@media (min-width: 769px) {
+  .hero-visual {
+    position: absolute;
+    width: min(58vw, 850px);
+    height: min(58vw, 700px);
+    right: -2vw;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .notebook-3d {
+    transform: scale(1);
+  }
+}
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (min-width: 769px) and (max-width: 1100px) {
+  .hero-visual {
+    width: 58vw;
+    height: 58vw;
+    right: -4vw;
+  }
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 768px) {
+  .hero-visual {
+    position: relative;
+    width: 100%;
+    height: 390px;
+    min-height: 390px;
+    margin-top: 15px;
+    overflow: visible;
+  }
+
+  .notebook-3d {
+    width: 100%;
+    height: 100%;
+  }
+
+  .notebook-3d canvas {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .hero-visual .visual-label {
+    font-size: 9px;
+  }
+
+  .hero-visual .visual-data {
+    display: none;
+  }
+}
+
+/* =========================================================
+   MOBILE PEQUENO
+========================================================= */
+
+@media (max-width: 480px) {
+  .hero-visual {
+    height: 330px;
+    min-height: 330px;
+    margin-top: 5px;
+  }
+
+  .hero-visual .label-top {
+    top: 4%;
+    left: 3%;
+  }
+
+  .hero-visual .label-bottom {
+    bottom: 4%;
+    right: 3%;
+  }
+}
+
+/* =========================================================
+   ACESSIBILIDADE
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .notebook-3d {
+    display: block;
+  }
+}

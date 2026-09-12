@@ -13,9 +13,10 @@ import {
   Zap,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import Notebook3D from './components/Notebook3D'
 
 const whatsappNumber = '5531983994883'
-const whatsappLink = `https://wa.me/5531983994883`
+const whatsappLink = `https://wa.me/${whatsappNumber}`
 
 const projects = [
   {
@@ -282,11 +283,7 @@ function App() {
           </div>
 
           <div className="hero-visual">
-            <div className="core-object">
-              <div className="core-inner">
-                <Sparkles size={32} />
-              </div>
-            </div>
+            <Notebook3D />
 
             <div className="visual-label glass-chip label-top">
               digital infrastructure
@@ -783,7 +780,9 @@ function App() {
             <div className="process-progress">
               <span
                 style={{
-                  height: `${((activeProcess + 1) / processSteps.length) * 100}%`,
+                  height: `${
+                    ((activeProcess + 1) / processSteps.length) * 100
+                  }%`,
                 }}
               />
             </div>
