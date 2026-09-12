@@ -1,122 +1,176 @@
-import { Environment, Float, useGLTF } from '@react-three/drei'
+import { Environment, Html, OrbitControls, useGLTF } from '@react-three/drei'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { useEffect, useRef } from 'react'
+import { Suspense, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 
-function NotebookModel() {
+type AccessKey = 'systems' | 'automation' | 'web' | 'data'
+
+const accesses: Array<{
+  id: AccessKey
+  label: string
+  index: string
+  title: string
+  text: string
+}> = [
+  {
+    id: 'systems',
+    label: 'SISTEMAS',
+    index: '01',
+    title: 'Sistemas sob medida',
+    text: 'Ferramentas digitais construídas para organizar processos e tornar a operação mais eficiente.',
+  },
+  {
+    id: 'automation',
+    label: 'AUTOMAÇÃO',
+    index: '02',
+    title: 'Fluxos inteligentes',
+    text: 'Conectamos tarefas, dados e ferramentas para reduzir trabalho manual e acelerar a operação.',
+  },
+  {
+    id: 'web',
+    label: 'WEB',
+    index: '03',
+    title: 'Experiências digitais',
+    text: 'Sites e interfaces pensados para posicionar a empresa e transformar atenção em oportunidade.',
+  },
+  {
+    id: 'data',
+    label: 'DADOS',
+    index: '04',
+    title: 'Informação organizada',
+    text: 'Estruturas que deixam informações mais acessíveis, conectadas e úteis para decisões melhores.',
+  },
+]
+
+function NotebookModel({ active }: { active: AccessKey | null }) {
   const group = useRef<THREE.Group>(null)
   const { scene } = useGLTF('/notebook.glb')
 
-  const mouse = useRef({ x: 0, y: 0 })
+  const model = useMemo(() => {
+    const clone = scene.clone(true)
+    const box = new THREE.Box3().setFromObject(clone)
+    const center = box.getCenter(new THREE.Vector3())
+    const size = box.getSize(new THREE.Vector3())
+    const maxDimension = Math.max(size.x, size.y, size.z)
 
-  useEffect(() => {
-    const handleMouseMove = (event: MouseEvent) => {
-      mouse.current.x =
-        (event.clientX / window.innerWidth) * 2 - 1
+    clone.position.sub(center)
+    clone.scale.setScalar(3.15 / maxDimension)
 
-      mouse.current.y =
-        -(event.clientY / window.innerHeight) * 2 + 1
-    }
+    return clone
+  }, [scene])
 
-    window.addEventListener('mousemove', handleMouseMove)
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove)
-    }
-  }, [])
-
-  useFrame((state) => {
+  useFrame((_, delta) => {
     if (!group.current) return
 
-    const time = state.clock.getElapsedTime()
+    const targetY = active ? 0.18 : -0.18
+    const targetX = active ? -0.08 : 0.04
+    const targetZ = active ? 0.04 : 0
+    const targetScale = active ? 1.04 : 1
 
-    /*
-      Movimento baseado no mouse
-    */
-
-    const targetY = mouse.current.x * 0.22 - 0.35
-    const targetX = -mouse.current.y * 0.10 - 0.08
-    const targetZ = mouse.current.x * -0.025
-
-    group.current.rotation.y = THREE.MathUtils.lerp(
-      group.current.rotation.y,
-      targetY,
-      0.045,
-    )
-
-    group.current.rotation.x = THREE.MathUtils.lerp(
-      group.current.rotation.x,
-      targetX,
-      0.045,
-    )
-
-    group.current.rotation.z = THREE.MathUtils.lerp(
-      group.current.rotation.z,
-      targetZ,
-      0.045,
-    )
-
-    /*
-      Flutuação extremamente sutil
-    */
-
-    group.current.position.y =
-      Math.sin(time * 0.7) * 0.045
+    group.current.rotation.y = THREE.MathUtils.damp(group.current.rotation.y, targetY, 3.2, delta)
+    group.current.rotation.x = THREE.MathUtils.damp(group.current.rotation.x, targetX, 3.2, delta)
+    group.current.rotation.z = THREE.MathUtils.damp(group.current.rotation.z, targetZ, 3.2, delta)
+    group.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 1 - Math.exp(-4 * delta))
   })
 
+  return <primitive ref={group} object={model} />
+}
+
+function Scene({ active }: { active: AccessKey | null }) {
   return (
-    <group
-      ref={group}
-      scale={2.5}
-      position={[0, 0, 0]}
-    >
-      <primitive object={scene} />
-    </group>
+    <>
+      <ambientLight intensity={1.5} />
+      <directionalLight position={[4, 5, 6]} intensity={3.2} />
+      <directionalLight position={[-4, 2, -3]} intensity={1.2} />
+      <pointLight position={[0, 2, 2]} intensity={active ? 2.2 : 1.2} color="#ff4b16" />
+      <Environment preset="studio" />
+      <Suspense fallback={null}>
+        <NotebookModel active={active} />
+      </Suspense>
+      <OrbitControls
+        enableZoom={false}
+        enablePan={false}
+        rotateSpeed={0.75}
+        dampingFactor={0.08}
+        enableDamping
+        minPolarAngle={Math.PI * 0.30}
+        maxPolarAngle={Math.PI * 0.70}
+      />
+      <Html
+        position={[0, -1.55, 0]}
+        center
+        style={{ pointerEvents: 'none' }}
+      >
+        <div className="model-status">APORTE / DIGITAL CORE</div>
+      </Html>
+    </>
   )
 }
 
 export default function Notebook3D() {
+  const [active, setActive] = useState<AccessKey | null>(null)
+  const activeAccess = accesses.find(item => item.id === active) ?? null
+
   return (
-    <div className="notebook-3d">
-      <Canvas
-        camera={{
-          position: [0, 1, 5],
-          fov: 35,
-        }}
-        dpr={[1, 1.5]}
-        gl={{
-          antialias: true,
-          alpha: true,
-          powerPreference: 'high-performance',
-        }}
-      >
-        {/* Luz ambiente */}
-        <ambientLight intensity={1.2} />
+    <section className="interactive-3d-section" aria-label="Explore a Aporte">
+      <div className="interactive-3d-head">
+        <div>
+          <span className="interactive-kicker">02 / EXPLORE</span>
+          <h2>Veja como<br /><em>pensamos.</em></h2>
+        </div>
+        <p>Toque nos acessos ou arraste o modelo para explorar a Aporte.</p>
+      </div>
 
-        {/* Luz principal */}
-        <directionalLight
-          position={[4, 6, 5]}
-          intensity={3}
-        />
+      <div className={`interactive-3d-stage ${active ? 'has-active' : ''}`}>
+        <div className="interactive-3d-grid" />
+        <div className="interactive-3d-orbit orbit-a" />
+        <div className="interactive-3d-orbit orbit-b" />
 
-        {/* Luz de preenchimento */}
-        <directionalLight
-          position={[-4, 3, -3]}
-          intensity={1.4}
-        />
+        <div className="interactive-3d-canvas">
+          <Canvas
+            camera={{ position: [0, 0.45, 5.1], fov: 31 }}
+            dpr={[1, 1.35]}
+            gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+          >
+            <Scene active={active} />
+          </Canvas>
+        </div>
 
-        {/* Iluminação de estúdio */}
-        <Environment preset="studio" />
+        <div className="touch-hint">
+          <span className="touch-hint-icon">↔</span>
+          <span>ARRASTE PARA GIRAR</span>
+        </div>
 
-        <Float
-          speed={0.8}
-          rotationIntensity={0.03}
-          floatIntensity={0.08}
-        >
-          <NotebookModel />
-        </Float>
-      </Canvas>
-    </div>
+        <div className="access-list" aria-label="Acessos">
+          {accesses.map(access => (
+            <button
+              key={access.id}
+              type="button"
+              className={`access-button ${active === access.id ? 'is-active' : ''}`}
+              onClick={() => setActive(current => current === access.id ? null : access.id)}
+              aria-expanded={active === access.id}
+            >
+              <span className="access-index">{access.index}</span>
+              <span>{access.label}</span>
+              <span className="access-arrow">↗</span>
+            </button>
+          ))}
+        </div>
+
+        {activeAccess && (
+          <div className="access-detail" role="dialog" aria-label={activeAccess.title}>
+            <div className="access-detail-top">
+              <span>{activeAccess.index} / {activeAccess.label}</span>
+              <button type="button" onClick={() => setActive(null)} aria-label="Fechar">×</button>
+            </div>
+            <h3>{activeAccess.title}</h3>
+            <p>{activeAccess.text}</p>
+            <a href="#consultar" onClick={() => setActive(null)}>Conversar sobre um projeto ↗</a>
+          </div>
+        )}
+
+      </div>
+    </section>
   )
 }
 
