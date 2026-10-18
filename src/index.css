@@ -108,7 +108,14 @@ em { color: var(--orange); font-style: normal; }
 
 .brand {
   display: inline-flex; align-items: center; min-height: 44px;
-  font: 700 15px 'DM Mono', monospace; letter-spacing: .1em;
+  flex-shrink: 0;
+}
+.brand-logo {
+  display: block;
+  width: clamp(112px, 15vw, 142px);
+  max-height: 38px;
+  object-fit: contain;
+  object-position: left center;
 }
 .brand-dot { color: var(--orange); }
 
@@ -437,9 +444,26 @@ em { color: var(--orange); font-style: normal; }
 
 .site-footer {
   padding: 28px 0 calc(100px + env(safe-area-inset-bottom));
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   background: var(--night); color: #f4f2ef; border-top: 1px solid var(--line-light);
 }
-.footer-inner { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
+.site-footer::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: min(74vw, 760px);
+  aspect-ratio: 3.4 / 1;
+  right: -5%;
+  bottom: 8%;
+  background: url('/aporte-wordmark.png') center / contain no-repeat;
+  opacity: .055;
+  pointer-events: none;
+  filter: grayscale(1);
+}
+.footer-inner { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
+.footer-brand-logo { width: clamp(112px, 15vw, 142px); max-height: 36px; }
 .footer-note, .copyright { color: var(--muted-dark); font-size: 14px; }
 .footer-links { display: flex; gap: 8px; }
 .footer-links a { display: inline-flex; align-items: center; min-height: 44px; padding-right: 18px; color: #dcd8df; font-size: 15px; font-weight: 600; }

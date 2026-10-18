@@ -434,7 +434,7 @@ function App() {
 
       <header className={`site-header${headerHidden && !menuOpen ? ' is-hidden' : ''}`}>
         <a href="#inicio" className="brand" aria-label="Aporte, voltar ao início" onClick={closeMenu}>
-          APORTE<span className="brand-dot">.</span>
+          <img src="/aporte-wordmark.png" alt="Aporte" className="brand-logo" />
         </a>
 
         <nav className="desktop-nav" aria-label="Principal">
@@ -906,8 +906,8 @@ function App() {
 
       <footer className="site-footer">
         <div className="wrap footer-inner">
-          <a href="#inicio" className="brand" aria-label="Aporte, voltar ao início">
-            APORTE<span className="brand-dot">.</span>
+          <a href="#inicio" className="brand footer-brand" aria-label="Aporte, voltar ao início">
+            <img src="/aporte-wordmark.png" alt="Aporte" className="brand-logo footer-brand-logo" />
           </a>
           <span className="footer-note">Estratégia, design e tecnologia.</span>
           <nav className="footer-links" aria-label="Rodapé">
