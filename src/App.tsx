@@ -209,12 +209,14 @@ function App() {
   const [activeProject, setActiveProject] = useState(0)
   const [activeGallery, setActiveGallery] = useState(0)
   const [activeProcess, setActiveProcess] = useState(0)
+  const [activeService, setActiveService] = useState(0)
 
   const [name, setName] = useState('')
   const [need, setNeed] = useState('')
   const [message, setMessage] = useState('')
 
   const progressRef = useRef<HTMLDivElement>(null)
+  const servicesRef = useRef<HTMLDivElement>(null)
   const galleryRef = useRef<HTMLDivElement>(null)
   const touchStart = useRef<{ x: number; y: number } | null>(null)
 
@@ -386,6 +388,38 @@ function App() {
     }
   }
 
+  const goToService = (index: number) => {
+    const track = servicesRef.current
+    if (!track) return
+    const cards = Array.from(track.querySelectorAll<HTMLElement>('.service-card'))
+    if (!cards.length) return
+    const nextIndex = (index + cards.length) % cards.length
+    setActiveService(nextIndex)
+    track.scrollTo({
+      left: cards[nextIndex].offsetLeft - track.offsetLeft,
+      behavior: 'smooth',
+    })
+  }
+
+  const handleServicesScroll = () => {
+    const track = servicesRef.current
+    if (!track) return
+    const cards = Array.from(track.querySelectorAll<HTMLElement>('.service-card'))
+    if (!cards.length) return
+    const center = track.getBoundingClientRect().left + track.clientWidth / 2
+    let closestIndex = 0
+    let closestDistance = Infinity
+    cards.forEach((card, index) => {
+      const rect = card.getBoundingClientRect()
+      const distance = Math.abs(center - (rect.left + rect.width / 2))
+      if (distance < closestDistance) {
+        closestDistance = distance
+        closestIndex = index
+      }
+    })
+    setActiveService(closestIndex)
+  }
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const lines = [`Olá! Me chamo ${name.trim()}.`, `Preciso de: ${need}.`]
@@ -520,34 +554,64 @@ function App() {
               </p>
             </div>
 
-            <div className="service-grid">
-              {services.map((service, index) => {
-                const Icon = service.icon
-                return (
-                  <article
-                    key={service.id}
-                    className="service-card scroll-reveal"
-                    style={{ transitionDelay: `${index * 80}ms` }}
-                  >
-                    <span className="service-icon" aria-hidden="true"><Icon size={24} /></span>
-                    <h3>{service.title}</h3>
-                    <p>{service.text}</p>
-                    <ul>
-                      {service.points.map(point => (
-                        <li key={point}><Check size={16} aria-hidden="true" />{point}</li>
-                      ))}
-                    </ul>
-                    <a
-                      className="btn btn-outline btn-block"
-                      href={whatsapp(service.message)}
-                      target="_blank"
-                      rel="noopener noreferrer"
+            <div className="services-carousel">
+              <div
+                className="service-track"
+                ref={servicesRef}
+                onScroll={handleServicesScroll}
+                aria-label="Carrossel de serviços"
+              >
+                {services.map((service, index) => {
+                  const Icon = service.icon
+                  return (
+                    <article
+                      key={service.id}
+                      className="service-card scroll-reveal"
+                      style={{ transitionDelay: `${index * 80}ms` }}
                     >
-                      {service.cta} <ArrowUpRight size={18} aria-hidden="true" />
-                    </a>
-                  </article>
-                )
-              })}
+                      <span className="service-icon" aria-hidden="true"><Icon size={24} /></span>
+                      <h3>{service.title}</h3>
+                      <p>{service.text}</p>
+                      <ul>
+                        {service.points.map(point => (
+                          <li key={point}><Check size={16} aria-hidden="true" />{point}</li>
+                        ))}
+                      </ul>
+                      <a
+                        className="btn btn-outline btn-block"
+                        href={whatsapp(service.message)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {service.cta} <ArrowUpRight size={18} aria-hidden="true" />
+                      </a>
+                    </article>
+                  )
+                })}
+              </div>
+
+              <div className="services-carousel-controls">
+                <div className="service-dots" aria-label="Selecionar serviço">
+                  {services.map((service, index) => (
+                    <button
+                      key={service.id}
+                      type="button"
+                      className={`service-dot${activeService === index ? ' is-active' : ''}`}
+                      aria-label={`Mostrar serviço: ${service.title}`}
+                      aria-current={activeService === index ? 'true' : undefined}
+                      onClick={() => goToService(index)}
+                    />
+                  ))}
+                </div>
+                <div className="service-arrows">
+                  <button type="button" className="service-arrow" aria-label="Serviço anterior" onClick={() => goToService(activeService - 1)}>
+                    <ChevronLeft size={20} aria-hidden="true" />
+                  </button>
+                  <button type="button" className="service-arrow" aria-label="Próximo serviço" onClick={() => goToService(activeService + 1)}>
+                    <ChevronRight size={20} aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </section>
