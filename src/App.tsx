@@ -1,23 +1,35 @@
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import type { CSSProperties, FormEvent, ReactNode, TouchEvent } from 'react'
 import {
-  ArrowDownRight,
+  ArrowRight,
   ArrowUpRight,
+  Check,
+  ChevronLeft,
   ChevronRight,
-  Code2,
-  Database,
+  Globe,
   Layers3,
   Menu,
-  Network,
-  Send,
-  Sparkles,
+  MessageCircle,
   X,
   Zap,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import type { CSSProperties } from 'react'
-import Notebook3D from './components/Notebook3D'
 
-const whatsappNumber = '5531983994883'
-const whatsappLink = `https://wa.me/${whatsappNumber}`
+// O 3D é pesado: só é baixado quando o usuário chega perto da seção.
+const Notebook3D = lazy(() => import('./components/Notebook3D'))
+
+const WHATSAPP_NUMBER = '5531983994883'
+
+const whatsapp = (message?: string) =>
+  `https://wa.me/${WHATSAPP_NUMBER}${message ? `?text=${encodeURIComponent(message)}` : ''}`
+
+const GENERIC_MESSAGE = 'Olá! Vim pelo site da Aporte e quero conversar sobre um projeto.'
+
+const NAV = [
+  { id: 'servicos', label: 'Serviços' },
+  { id: 'portfolio', label: 'Projetos' },
+  { id: 'processo', label: 'Como trabalhamos' },
+  { id: 'empresa', label: 'Sobre' },
+] as const
 
 type Project = {
   id: string
@@ -51,7 +63,7 @@ const projects: Project[] = [
   {
     id: '02',
     name: 'Site de Estética Automotiva',
-    type: 'Website / Experiência digital',
+    type: 'Website',
     description:
       'Site desenvolvido para uma empresa de estética automotiva, com foco em apresentação visual, interação, serviços e condução do visitante até o contato.',
     tags: ['Website', 'UX/UI', 'Interação', 'Mobile'],
@@ -68,22 +80,43 @@ const projects: Project[] = [
 
 const services = [
   {
-    number: '01',
-    title: 'Sites & Landing Pages',
+    id: 'site',
+    icon: Globe,
+    title: 'Sites e Landing Pages',
     text: 'Experiências digitais estratégicas para apresentar sua empresa, seus serviços e transformar visitantes em oportunidades.',
-    className: 'solution-wide',
+    points: [
+      'Apresentar a empresa e os serviços',
+      'Receber contatos e pedidos de orçamento',
+      'Funcionar muito bem no celular',
+    ],
+    cta: 'Quero um site',
+    message: 'Olá! Quero conversar sobre um site ou landing page para a minha empresa.',
   },
   {
-    number: '02',
+    id: 'sistema',
+    icon: Layers3,
     title: 'Sistemas',
     text: 'Ferramentas personalizadas para organizar processos, centralizar informações e tornar sua operação mais eficiente.',
-    className: 'solution-dark',
+    points: [
+      'Agendamentos, pedidos e cadastros',
+      'Painéis para acompanhar a operação',
+      'Trocar planilhas e controles manuais',
+    ],
+    cta: 'Quero um sistema',
+    message: 'Olá! Quero conversar sobre um sistema sob medida para a minha empresa.',
   },
   {
-    number: '03',
+    id: 'automacao',
+    icon: Zap,
     title: 'Automação',
     text: 'Integrações e fluxos inteligentes para reduzir tarefas manuais e conectar as partes importantes do negócio.',
-    className: 'solution-accent',
+    points: [
+      'Conectar as ferramentas que você já usa',
+      'Eliminar tarefas repetitivas',
+      'Avisos e fluxos automáticos',
+    ],
+    cta: 'Quero automatizar',
+    message: 'Olá! Quero conversar sobre automação de processos na minha empresa.',
   },
 ]
 
@@ -110,123 +143,330 @@ const processSteps = [
   },
 ]
 
-function App() {
-  const [scrollProgress, setScrollProgress] = useState(0)
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [activeProject, setActiveProject] = useState(0)
-  const [activeProcess, setActiveProcess] = useState(0)
-  const [cursor, setCursor] = useState({ x: 0, y: 0 })
-  const [techRotation, setTechRotation] = useState(0)
-  const [activeGallery, setActiveGallery] = useState(0)
+const principles = [
+  {
+    title: 'Começamos pelo problema',
+    text: 'Antes de desenhar ou programar, entendemos o negócio e o que precisa ser resolvido.',
+  },
+  {
+    title: 'Tudo tem uma função',
+    text: 'Cada tela, botão e automação existe para ajudar o negócio, não só para enfeitar.',
+  },
+  {
+    title: 'Feito para evoluir',
+    text: 'A solução nasce preparada para acompanhar novas necessidades e oportunidades.',
+  },
+]
+
+const tools = [
+  { name: 'React', text: 'Interfaces rápidas e fluidas' },
+  { name: 'TypeScript', text: 'Código mais seguro e fácil de manter' },
+  { name: 'Supabase', text: 'Banco de dados, login e backend' },
+  { name: 'APIs', text: 'Conexão entre sistemas e serviços' },
+  { name: 'Automação', text: 'Fluxos que eliminam trabalho manual' },
+  { name: 'UX/UI', text: 'Design pensado para quem usa' },
+]
+
+const needs = ['Site ou landing page', 'Sistema', 'Automação', 'Ainda não sei']
+
+function DeferredMount({ children, minHeight }: { children: ReactNode; minHeight: number }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
+    const element = ref.current
+    if (!element || ready) return undefined
+    if (!('IntersectionObserver' in window)) {
+      setReady(true)
+      return undefined
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setReady(true)
+          observer.disconnect()
+        }
+      },
+      { rootMargin: '700px 0px' },
+    )
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [ready])
+
+  return (
+    <div ref={ref} className="deferred" style={{ minHeight: ready ? undefined : minHeight }}>
+      {ready ? children : null}
+    </div>
+  )
+}
+
+function App() {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [headerHidden, setHeaderHidden] = useState(false)
+  const [activeSection, setActiveSection] = useState('')
+  const [pastHero, setPastHero] = useState(false)
+  const [atContact, setAtContact] = useState(false)
+  const [activeProject, setActiveProject] = useState(0)
+  const [activeGallery, setActiveGallery] = useState(0)
+  const [activeProcess, setActiveProcess] = useState(0)
+
+  const [name, setName] = useState('')
+  const [need, setNeed] = useState('')
+  const [message, setMessage] = useState('')
+
+  const progressRef = useRef<HTMLDivElement>(null)
+  const galleryRef = useRef<HTMLDivElement>(null)
+  const touchStart = useRef<{ x: number; y: number } | null>(null)
+
+  const currentProject = projects[activeProject]
+  const galleryTotal = currentProject.gallery.length
+  const dockVisible = pastHero && !atContact && !menuOpen
+
+  const closeMenu = () => setMenuOpen(false)
+
+  // Barra de progresso e header que some ao rolar para baixo (sem re-renderizar a página inteira).
+  useEffect(() => {
     let frame = 0
+    let lastY = window.scrollY
 
     const handleScroll = () => {
       cancelAnimationFrame(frame)
       frame = requestAnimationFrame(() => {
+        const y = window.scrollY
         const max = document.documentElement.scrollHeight - window.innerHeight
-        const progress = max > 0 ? Math.min((window.scrollY / max) * 100, 100) : 0
-        setScrollProgress(progress)
-        setTechRotation(window.scrollY * 0.025)
-      })
-    }
+        const progress = max > 0 ? Math.min(y / max, 1) : 0
+        if (progressRef.current) progressRef.current.style.transform = `scaleX(${progress})`
 
-    const handleMouseMove = (event: MouseEvent) => {
-      setCursor({ x: event.clientX, y: event.clientY })
+        const delta = y - lastY
+        if (Math.abs(delta) > 6) {
+          setHeaderHidden(delta > 0 && y > 120)
+          lastY = y
+        }
+      })
     }
 
     handleScroll()
     window.addEventListener('scroll', handleScroll, { passive: true })
-    window.addEventListener('mousemove', handleMouseMove)
-
     return () => {
       cancelAnimationFrame(frame)
       window.removeEventListener('scroll', handleScroll)
-      window.removeEventListener('mousemove', handleMouseMove)
     }
   }, [])
 
+  // Menu mobile: trava a rolagem, fecha com Esc e ao voltar para o desktop.
   useEffect(() => {
+    document.body.style.overflow = menuOpen ? 'hidden' : ''
+    if (!menuOpen) return undefined
+
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMenuOpen(false)
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => {
+      window.removeEventListener('keydown', handleKey)
+      document.body.style.overflow = ''
+    }
+  }, [menuOpen])
+
+  useEffect(() => {
+    const query = window.matchMedia('(min-width: 769px)')
+    const handleChange = (event: MediaQueryListEvent) => {
+      if (event.matches) setMenuOpen(false)
+    }
+    query.addEventListener('change', handleChange)
+    return () => query.removeEventListener('change', handleChange)
+  }, [])
+
+  // Indica em qual seção o usuário está.
+  useEffect(() => {
+    const ids = ['inicio', ...NAV.map(item => item.id), 'consultar']
+    const sections = ids
+      .map(id => document.getElementById(id))
+      .filter((element): element is HTMLElement => element !== null)
+
     const observer = new IntersectionObserver(
       entries => {
         entries.forEach(entry => {
-          if (entry.isIntersecting) entry.target.classList.add('is-visible')
+          if (entry.isIntersecting) setActiveSection(entry.target.id)
         })
       },
-      { threshold: 0.12 },
+      { rootMargin: '-45% 0px -50% 0px' },
     )
-
-    document.querySelectorAll('.scroll-reveal').forEach(element => observer.observe(element))
+    sections.forEach(section => observer.observe(section))
     return () => observer.disconnect()
   }, [])
 
+  // A barra fixa de WhatsApp aparece depois do início e some quando o contato está na tela.
   useEffect(() => {
-    setActiveGallery(0)
-  }, [activeProject])
+    const hero = document.getElementById('inicio')
+    const contact = document.getElementById('consultar')
+    if (!hero || !contact) return undefined
 
-  const currentProject = projects[activeProject]
+    const heroObserver = new IntersectionObserver(([entry]) => setPastHero(!entry.isIntersecting))
+    const contactObserver = new IntersectionObserver(([entry]) => setAtContact(entry.isIntersecting), {
+      threshold: 0.15,
+    })
+    heroObserver.observe(hero)
+    contactObserver.observe(contact)
+    return () => {
+      heroObserver.disconnect()
+      contactObserver.disconnect()
+    }
+  }, [])
 
-  const changeProject = (index: number) => {
+  // Entrada suave dos blocos.
+  useEffect(() => {
+    const items = document.querySelectorAll<HTMLElement>('.scroll-reveal')
+    if (!('IntersectionObserver' in window)) {
+      items.forEach(item => item.classList.add('is-visible'))
+      return undefined
+    }
+    const observer = new IntersectionObserver(
+      entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible')
+            observer.unobserve(entry.target)
+          }
+        })
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -6% 0px' },
+    )
+    items.forEach(item => observer.observe(item))
+    return () => observer.disconnect()
+  }, [])
+
+  // A etapa do processo acompanha a rolagem (funciona no toque, sem depender de hover).
+  useEffect(() => {
+    const steps = document.querySelectorAll<HTMLElement>('[data-step]')
+    const observer = new IntersectionObserver(
+      entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) setActiveProcess(Number((entry.target as HTMLElement).dataset.step))
+        })
+      },
+      { rootMargin: '-40% 0px -50% 0px' },
+    )
+    steps.forEach(step => observer.observe(step))
+    return () => observer.disconnect()
+  }, [])
+
+  // Mantém a miniatura ativa visível na faixa de miniaturas, sem mexer na rolagem da página.
+  useEffect(() => {
+    const row = galleryRef.current
+    const button = row?.children[activeGallery] as HTMLElement | undefined
+    if (!row || !button) return
+    row.scrollTo({
+      left: button.offsetLeft - (row.clientWidth - button.clientWidth) / 2,
+      behavior: 'smooth',
+    })
+  }, [activeGallery, activeProject])
+
+  const selectProject = (index: number) => {
     setActiveProject(index)
-    document.getElementById('portfolio')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    setActiveGallery(0)
+  }
+
+  const goToImage = (index: number) => setActiveGallery((index + galleryTotal) % galleryTotal)
+
+  const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+    const touch = event.touches[0]
+    touchStart.current = { x: touch.clientX, y: touch.clientY }
+  }
+
+  const handleTouchEnd = (event: TouchEvent<HTMLDivElement>) => {
+    const start = touchStart.current
+    touchStart.current = null
+    if (!start) return
+    const touch = event.changedTouches[0]
+    const dx = touch.clientX - start.x
+    const dy = touch.clientY - start.y
+    if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      goToImage(activeGallery + (dx < 0 ? 1 : -1))
+    }
+  }
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const lines = [`Olá! Me chamo ${name.trim()}.`, `Preciso de: ${need}.`]
+    if (message.trim()) lines.push('', message.trim())
+    window.open(whatsapp(lines.join('\n')), '_blank', 'noopener,noreferrer')
   }
 
   return (
-    <div
-      className="site-shell"
-      style={
-        {
-          '--cursor-x': `${cursor.x}px`,
-          '--cursor-y': `${cursor.y}px`,
-          '--tech-rotation': `${techRotation}deg`,
-        } as CSSProperties
-      }
-    >
-      <div className="noise" />
-      <div className="cursor-glow" />
-      <div className="scroll-progress" style={{ width: `${scrollProgress}%` }} />
+    <div className="site-shell">
+      <a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
+      <div className="scroll-progress" ref={progressRef} aria-hidden="true" />
 
-      <header className="site-header glass-panel">
-        <a href="#inicio" className="brand" aria-label="Aporte" onClick={() => setMenuOpen(false)}>
-          <span className="brand-mark"><Sparkles size={15} /></span>
-          <span>APORTE<span className="brand-dot">.</span></span>
+      <header className={`site-header${headerHidden && !menuOpen ? ' is-hidden' : ''}`}>
+        <a href="#inicio" className="brand" aria-label="Aporte, voltar ao início" onClick={closeMenu}>
+          APORTE<span className="brand-dot">.</span>
         </a>
 
-        <nav className={`desktop-nav ${menuOpen ? 'is-open' : ''}`}>
-          <a href="#empresa" onClick={() => setMenuOpen(false)}><span className="nav-index">01</span>Empresa</a>
-          <a href="#servicos" onClick={() => setMenuOpen(false)}><span className="nav-index">02</span>Serviços</a>
-          <a href="#portfolio" onClick={() => setMenuOpen(false)}><span className="nav-index">03</span>Portfólio</a>
-          <a href="#processo" onClick={() => setMenuOpen(false)}><span className="nav-index">04</span>Processo</a>
-          <a href="#consultar" onClick={() => setMenuOpen(false)}><span className="nav-index">05</span>Consultar</a>
+        <nav className="desktop-nav" aria-label="Principal">
+          {NAV.map(item => (
+            <a
+              key={item.id}
+              href={`#${item.id}`}
+              className={activeSection === item.id ? 'is-current' : ''}
+              aria-current={activeSection === item.id ? 'true' : undefined}
+            >
+              {item.label}
+            </a>
+          ))}
         </nav>
 
-        <a href={whatsappLink} className="header-cta glass-button" target="_blank" rel="noreferrer">
-          Vamos conversar <ArrowUpRight size={15} />
+        <a
+          className="btn btn-primary btn-sm header-cta"
+          href={whatsapp(GENERIC_MESSAGE)}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <MessageCircle size={17} aria-hidden="true" /> Falar no WhatsApp
         </a>
 
         <button
-          className="mobile-menu glass-button"
           type="button"
+          className="menu-button"
           aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}
+          aria-expanded={menuOpen}
+          aria-controls="menu-principal"
           onClick={() => setMenuOpen(value => !value)}
         >
-          {menuOpen ? <X size={18} /> : <Menu size={18} />}
+          {menuOpen ? <X size={24} aria-hidden="true" /> : <Menu size={24} aria-hidden="true" />}
         </button>
       </header>
 
-      <main>
-        <section id="inicio" className="hero-section page-section">
-          <div className="hero-orbit orbit-one" />
-          <div className="hero-orbit orbit-two" />
+      <div id="menu-principal" className={`mobile-menu${menuOpen ? ' is-open' : ''}`} aria-hidden={!menuOpen}>
+        <nav aria-label="Menu">
+          {NAV.map(item => (
+            <a key={item.id} href={`#${item.id}`} onClick={closeMenu}>
+              <span>{item.label}</span>
+              <ChevronRight size={22} aria-hidden="true" />
+            </a>
+          ))}
+          <a href="#consultar" onClick={closeMenu}>
+            <span>Contato</span>
+            <ChevronRight size={22} aria-hidden="true" />
+          </a>
+        </nav>
+        <a
+          className="btn btn-primary btn-block"
+          href={whatsapp(GENERIC_MESSAGE)}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={closeMenu}
+        >
+          <MessageCircle size={20} aria-hidden="true" /> Falar no WhatsApp
+        </a>
+      </div>
 
-          <div className="hero-content">
-            <div className="eyebrow glass-chip reveal">
-              <span className="status-dot" />
-              Soluções digitais para negócios
-              <span className="eyebrow-line" />
-              Brasil · 2026
-            </div>
+      <main id="conteudo">
+        <section id="inicio" className="hero">
+          <div className="hero-inner">
+            <p className="hero-eyebrow reveal">
+              <span className="status-dot" aria-hidden="true" /> Software house
+            </p>
 
             <h1 className="hero-title reveal reveal-delay-1">
               Ideias que
@@ -234,284 +474,396 @@ function App() {
               viram <em>sistemas.</em>
             </h1>
 
-            <div className="hero-bottom reveal reveal-delay-2">
-              <p>
-                Criamos experiências digitais, sistemas e automações para empresas
-                que querem evoluir sua presença e sua operação.
-              </p>
-              <a href="#empresa" className="circle-link glass-circle" aria-label="Conhecer a Aporte">
-                <ArrowDownRight size={22} />
+            <p className="hero-lede reveal reveal-delay-2">
+              Criamos sites, sistemas e automações para empresas que querem evoluir sua presença e sua operação.
+            </p>
+
+            <div className="hero-actions reveal reveal-delay-3">
+              <a
+                className="btn btn-primary"
+                href={whatsapp(GENERIC_MESSAGE)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <MessageCircle size={20} aria-hidden="true" /> Falar no WhatsApp
+              </a>
+              <a className="btn btn-ghost" href="#portfolio">
+                Ver projetos <ArrowRight size={18} aria-hidden="true" />
               </a>
             </div>
-          </div>
 
-          <div className="hero-scroll">Scroll <span className="scroll-line" /></div>
-        </section>
+            <p className="hero-hint reveal reveal-delay-3">
+              Você conversa direto com a equipe, pelo WhatsApp.
+            </p>
 
-        <section className="ticker">
-          <div className="ticker-track">
-            <span>WEB EXPERIENCES</span><i>✦</i>
-            <span>DIGITAL SYSTEMS</span><i>✦</i>
-            <span>AUTOMATION</span><i>✦</i>
-            <span>PRODUCT STRATEGY</span><i>✦</i>
-            <span>WEB EXPERIENCES</span><i>✦</i>
-            <span>DIGITAL SYSTEMS</span><i>✦</i>
-            <span>AUTOMATION</span><i>✦</i>
-            <span>PRODUCT STRATEGY</span><i>✦</i>
+            <ul className="hero-links reveal reveal-delay-3" aria-label="O que fazemos">
+              <li><a href="#servicos">Sites e landing pages</a></li>
+              <li><a href="#servicos">Sistemas</a></li>
+              <li><a href="#servicos">Automação</a></li>
+            </ul>
           </div>
         </section>
 
-        <Notebook3D />
+        <DeferredMount minHeight={760}>
+          <Suspense fallback={<div className="deferred-fallback" aria-hidden="true" />}>
+            <Notebook3D />
+          </Suspense>
+        </DeferredMount>
 
-        <section id="empresa" className="projects-section page-section">
-          <div className="section-heading scroll-reveal">
-            <span className="section-number">01 / A EMPRESA</span>
-            <h2>Tecnologia com<br /><em>direção.</em></h2>
-            <p>A Aporte cria soluções digitais para empresas que precisam ir além de apenas estar presentes na internet.</p>
+        <section id="servicos" className="section">
+          <div className="wrap">
+            <div className="section-head scroll-reveal">
+              <span className="kicker">Serviços</span>
+              <h2 className="section-title">O que <em>construímos.</em></h2>
+              <p className="lede">
+                Soluções pensadas de acordo com o estágio, o objetivo e a necessidade de cada empresa.
+              </p>
+            </div>
+
+            <div className="service-grid">
+              {services.map((service, index) => {
+                const Icon = service.icon
+                return (
+                  <article
+                    key={service.id}
+                    className="service-card scroll-reveal"
+                    style={{ transitionDelay: `${index * 80}ms` }}
+                  >
+                    <span className="service-icon" aria-hidden="true"><Icon size={24} /></span>
+                    <h3>{service.title}</h3>
+                    <p>{service.text}</p>
+                    <ul>
+                      {service.points.map(point => (
+                        <li key={point}><Check size={16} aria-hidden="true" />{point}</li>
+                      ))}
+                    </ul>
+                    <a
+                      className="btn btn-outline btn-block"
+                      href={whatsapp(service.message)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {service.cta} <ArrowUpRight size={18} aria-hidden="true" />
+                    </a>
+                  </article>
+                )
+              })}
+            </div>
           </div>
+        </section>
 
-          <div className="project-stage scroll-reveal">
-            <div className="company-visual glass-panel">
-              <div className="company-grid" />
-              <div className="company-window company-window-main">
-                <div className="window-top"><span /><span /><span /></div>
-                <div className="window-content">
-                  <span className="window-label">APORTE / DIGITAL</span>
-                  <strong>estratégia<br />+ tecnologia</strong>
-                  <div className="window-bars"><i /><i /><i /></div>
+        <section id="portfolio" className="section section-alt">
+          <div className="wrap">
+            <div className="section-head scroll-reveal">
+              <span className="kicker">Projetos</span>
+              <h2 className="section-title">Projetos <em>reais.</em></h2>
+              <p className="lede">Uma seleção do que já foi construído pela Aporte.</p>
+            </div>
+
+            <div className="project-tabs" role="tablist" aria-label="Escolha um projeto">
+              {projects.map((project, index) => (
+                <button
+                  key={project.id}
+                  id={`aba-${project.id}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeProject === index}
+                  aria-controls="projeto-painel"
+                  className={activeProject === index ? 'is-active' : ''}
+                  onClick={() => selectProject(index)}
+                >
+                  <strong>{project.name}</strong>
+                  <small>{project.type}</small>
+                </button>
+              ))}
+            </div>
+
+            <article
+              id="projeto-painel"
+              role="tabpanel"
+              aria-labelledby={`aba-${currentProject.id}`}
+              className="project-case"
+            >
+              <div className="project-media">
+                <div
+                  className="shot"
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={handleTouchEnd}
+                >
+                  <img
+                    key={currentProject.gallery[activeGallery]}
+                    src={currentProject.gallery[activeGallery]}
+                    alt={`${currentProject.name}: tela ${activeGallery + 1} de ${galleryTotal}`}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <button
+                    type="button"
+                    className="shot-nav shot-prev"
+                    aria-label="Tela anterior"
+                    onClick={() => goToImage(activeGallery - 1)}
+                  >
+                    <ChevronLeft size={22} aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    className="shot-nav shot-next"
+                    aria-label="Próxima tela"
+                    onClick={() => goToImage(activeGallery + 1)}
+                  >
+                    <ChevronRight size={22} aria-hidden="true" />
+                  </button>
+                  <span className="shot-count" aria-live="polite">
+                    {activeGallery + 1} / {galleryTotal}
+                  </span>
                 </div>
+
+                <div className="thumbs" ref={galleryRef} aria-label="Telas do projeto">
+                  {currentProject.gallery.map((image, index) => (
+                    <button
+                      type="button"
+                      key={image}
+                      className={activeGallery === index ? 'is-active' : ''}
+                      onClick={() => setActiveGallery(index)}
+                      aria-label={`Ver tela ${index + 1}`}
+                      aria-current={activeGallery === index ? 'true' : undefined}
+                    >
+                      <img src={image} alt="" loading="lazy" decoding="async" />
+                    </button>
+                  ))}
+                </div>
+
+                <p className="shot-hint">
+                  <span className="hint-touch">Deslize a imagem ou toque nas miniaturas para ver mais telas.</span>
+                  <span className="hint-pointer">Use as setas ou as miniaturas para ver mais telas.</span>
+                </p>
               </div>
-              <div className="company-orb"><Sparkles size={32} /></div>
-              <div className="company-floating company-floating-one glass-panel"><Code2 size={15} /><span>BUILD</span></div>
-              <div className="company-floating company-floating-two glass-panel"><Network size={15} /><span>CONNECT</span></div>
-            </div>
 
-            <div className="project-info">
-              <div className="project-count"><span>APORTE</span> / SOBRE NÓS</div>
-              <h3>Não entregamos apenas<br /><em>páginas bonitas.</em></h3>
-              <p>Pensamos no problema, na jornada e no resultado. Cada projeto começa pela estratégia e é construído para ter uma função real dentro do negócio.</p>
-              <a href="#servicos" className="text-link">Conheça nossas soluções <ArrowUpRight size={16} /></a>
-            </div>
+              <div className="project-info">
+                <span className="project-type">
+                  Projeto {currentProject.id} de {String(projects.length).padStart(2, '0')} · {currentProject.type}
+                </span>
+                <h3>{currentProject.name}</h3>
+                <p>{currentProject.description}</p>
+
+                <ul className="tag-list" aria-label="Tecnologias e áreas">
+                  {currentProject.tags.map(tag => <li key={tag}>{tag}</li>)}
+                </ul>
+
+                <div className="project-video">
+                  <span>Veja funcionando</span>
+                  <video
+                    key={currentProject.id}
+                    src={currentProject.video}
+                    poster={currentProject.image}
+                    controls
+                    playsInline
+                    preload="none"
+                  />
+                </div>
+
+                <a
+                  className="btn btn-dark btn-block"
+                  href={whatsapp(
+                    `Olá! Vi o projeto "${currentProject.name}" no site da Aporte e quero conversar sobre algo parecido.`,
+                  )}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Quero algo parecido <ArrowUpRight size={18} aria-hidden="true" />
+                </a>
+              </div>
+            </article>
           </div>
         </section>
 
-        <section className="founder-section page-section">
-          <div className="founder-copy scroll-reveal">
-            <span className="section-number">02 / QUEM ESTÁ POR TRÁS</span>
-            <h2>Tecnologia com<br /><em>visão de negócio.</em></h2>
-            <p className="founder-lead">
-              A Aporte é conduzida por <strong>Pedro Henrique</strong>, fundador da empresa.
-            </p>
-            <p>
-              O trabalho começa entendendo o que precisa ser resolvido. A partir daí,
-              design, desenvolvimento e tecnologia entram como ferramentas para construir
-              uma solução que tenha função real.
-            </p>
-            <div className="founder-signature">
-              <span>PEDRO HENRIQUE</span>
-              <small>FUNDADOR · APORTE</small>
+        <section id="processo" className="section">
+          <div className="wrap process-layout">
+            <div className="process-intro scroll-reveal">
+              <span className="kicker">Como trabalhamos</span>
+              <h2 className="section-title">Como uma ideia vira <em>produto.</em></h2>
+              <p className="lede">
+                Um processo claro para transformar necessidades reais em soluções digitais que façam sentido para o negócio.
+              </p>
             </div>
-          </div>
 
-          <div className="founder-portrait scroll-reveal">
-            <div className="founder-frame" />
-            <img src="/fotoPedro.png" alt="Pedro Henrique, fundador da Aporte" />
-            <div className="founder-label glass-chip">APORTE / FOUNDER</div>
+            <ol
+              className="process-list"
+              style={{ '--progress': activeProcess / (processSteps.length - 1) } as CSSProperties}
+            >
+              {processSteps.map((step, index) => (
+                <li
+                  key={step.number}
+                  data-step={index}
+                  className={`process-step scroll-reveal${activeProcess >= index ? ' is-reached' : ''}${
+                    activeProcess === index ? ' is-active' : ''
+                  }`}
+                >
+                  <span className="step-dot" aria-hidden="true">{step.number}</span>
+                  <div>
+                    <h3>{step.title}</h3>
+                    <p>{step.text}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
           </div>
         </section>
 
-        <section id="servicos" className="solutions-section page-section">
-          <div className="section-heading compact scroll-reveal">
-            <span className="section-number">03 / SERVIÇOS</span>
-            <h2>O que<br /><em>construímos.</em></h2>
-            <p>Soluções pensadas de acordo com o estágio, objetivo e necessidade de cada empresa.</p>
-          </div>
+        <section id="empresa" className="section section-alt">
+          <div className="wrap about-layout">
+            <div className="about-copy scroll-reveal">
+              <span className="kicker">Sobre a Aporte</span>
+              <h2 className="section-title">Tecnologia com <em>direção.</em></h2>
+              <p className="lede">
+                A Aporte cria soluções digitais para empresas que precisam ir além de apenas estar presentes na internet.
+              </p>
 
-          <div className="solution-grid">
-            {services.map((service, index) => (
-              <article key={service.number} className={`solution-card ${service.className} scroll-reveal`} style={{ transitionDelay: `${index * 90}ms` }}>
-                <div className="card-top"><span>{service.number}</span><span>APORTE</span></div>
+              <ul className="principles">
+                {principles.map(item => (
+                  <li key={item.title}>
+                    <h3>{item.title}</h3>
+                    <p>{item.text}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-                {index === 0 && (
-                  <div className="browser-mini">
-                    <div className="mini-top"><span /><span /><span /></div>
-                    <div className="mini-copy"><i>sua presença<br />digital.</i><div className="mini-shape" /></div>
-                  </div>
-                )}
-
-                {index === 1 && (
-                  <div className="data-stack">
-                    {['CLIENTES', 'PROCESSOS', 'RESULTADOS'].map((item, itemIndex) => (
-                      <div key={item}><span>0{itemIndex + 1}</span><b>{item}</b><ChevronRight size={13} /></div>
-                    ))}
-                  </div>
-                )}
-
-                {index === 2 && (
-                  <div className="connection-art">
-                    <span /><span /><span /><span />
-                    <div className="glass-circle"><Zap size={21} /></div>
-                  </div>
-                )}
-
-                <h3>{service.title}</h3>
-                <p>{service.text}</p>
-              </article>
-            ))}
+            <figure className="founder scroll-reveal">
+              <img src="/fotoPedro.png" alt="Pedro Henrique, fundador da Aporte" loading="lazy" decoding="async" />
+              <figcaption>
+                <strong>Pedro Henrique</strong>
+                <span>Fundador da Aporte</span>
+                <p>
+                  O trabalho começa entendendo o que precisa ser resolvido. A partir daí, design, desenvolvimento e
+                  tecnologia entram como ferramentas para construir uma solução que tenha função real.
+                </p>
+              </figcaption>
+            </figure>
           </div>
         </section>
 
-        <section id="portfolio" className="portfolio-real-section page-section">
-          <div className="section-heading scroll-reveal">
-            <span className="section-number">04 / PORTFÓLIO</span>
-            <h2>Projetos<br /><em>reais.</em></h2>
-            <p>Uma seleção do que já foi construído pela Aporte.</p>
-          </div>
+        <section id="tecnologia" className="section">
+          <div className="wrap">
+            <div className="section-head scroll-reveal">
+              <span className="kicker">Tecnologia</span>
+              <h2 className="section-title">Ferramentas são apenas parte da <em>solução.</em></h2>
+              <p className="lede">
+                Escolhemos a tecnologia de acordo com o problema. O objetivo não é usar mais ferramentas, mas construir a combinação certa.
+              </p>
+            </div>
 
-          <div className="real-project-tabs scroll-reveal" role="tablist" aria-label="Projetos">
-            {projects.map((project, index) => (
-              <button
-                key={project.id}
-                type="button"
-                className={activeProject === index ? 'active' : ''}
-                onClick={() => changeProject(index)}
-                role="tab"
-                aria-selected={activeProject === index}
-              >
-                <span>{project.id}</span>
-                <strong>{project.name}</strong>
-                <small>{project.type}</small>
-              </button>
-            ))}
+            <ul className="tools scroll-reveal">
+              {tools.map(tool => (
+                <li key={tool.name}>
+                  <strong>{tool.name}</strong>
+                  <span>{tool.text}</span>
+                </li>
+              ))}
+            </ul>
           </div>
+        </section>
 
-          <article className="real-project-case scroll-reveal">
-            <div className="real-project-media">
-              <div className="real-project-image-wrap">
-                <img
-                  key={currentProject.gallery[activeGallery]}
-                  src={currentProject.gallery[activeGallery]}
-                  alt={`${currentProject.name} — visual ${activeGallery + 1}`}
-                  className="real-project-image"
-                  loading="lazy"
-                  decoding="async"
+        <section id="consultar" className="contact">
+          <div className="wrap contact-layout">
+            <div className="contact-copy scroll-reveal">
+              <span className="kicker">Contato</span>
+              <h2 className="section-title">Tem uma ideia que merece <em>sair do papel?</em></h2>
+              <p className="lede">
+                Você não precisa ter tudo definido. Escolha o que mais se parece com o que precisa e conte o resto do seu jeito.
+              </p>
+            </div>
+
+            <form className="contact-form scroll-reveal" onSubmit={handleSubmit}>
+              <div className="field">
+                <label htmlFor="nome">Seu nome</label>
+                <input
+                  id="nome"
+                  name="nome"
+                  type="text"
+                  autoComplete="name"
+                  placeholder="Como podemos te chamar?"
+                  required
+                  value={name}
+                  onChange={event => setName(event.target.value)}
                 />
               </div>
 
-              <div className="real-project-gallery" aria-label="Galeria do projeto">
-                {currentProject.gallery.map((image, index) => (
-                  <button
-                    type="button"
-                    key={image}
-                    className={activeGallery === index ? 'active' : ''}
-                    onClick={() => setActiveGallery(index)}
-                    aria-label={`Ver imagem ${index + 1}`}
-                  >
-                    <img src={image} alt="" loading="lazy" decoding="async" />
-                  </button>
-                ))}
+              <fieldset className="field">
+                <legend>O que você precisa?</legend>
+                <div className="choices">
+                  {needs.map(item => (
+                    <label key={item} className="choice">
+                      <input
+                        type="radio"
+                        name="necessidade"
+                        value={item}
+                        required
+                        checked={need === item}
+                        onChange={() => setNeed(item)}
+                      />
+                      <span>{item}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+
+              <div className="field">
+                <label htmlFor="mensagem">
+                  Conte um pouco sobre a ideia <small>(opcional)</small>
+                </label>
+                <textarea
+                  id="mensagem"
+                  name="mensagem"
+                  rows={4}
+                  placeholder="Ex.: quero um sistema para agendar meus clientes."
+                  value={message}
+                  onChange={event => setMessage(event.target.value)}
+                />
               </div>
-            </div>
 
-            <div className="real-project-info">
-              <div className="real-project-meta">
-                <span>{currentProject.id} / 02</span>
-                <span>{currentProject.type}</span>
-              </div>
-
-              <h3>{currentProject.name}</h3>
-              <p>{currentProject.description}</p>
-
-              <div className="tag-list">
-                {currentProject.tags.map(tag => <span key={tag}>{tag}</span>)}
-              </div>
-
-              <div className="real-project-video">
-                <div className="video-label"><span>DEMONSTRAÇÃO</span><span>PLAY</span></div>
-                <video src={currentProject.video} controls playsInline preload="metadata" />
-              </div>
-
-              <a href={whatsappLink} className="text-link" target="_blank" rel="noreferrer">
-                Quero conversar sobre um projeto <ArrowUpRight size={16} />
-              </a>
-            </div>
-          </article>
-        </section>
-
-        <section id="processo" className="process-section page-section">
-          <div className="process-intro scroll-reveal">
-            <span className="section-number">05 / PROCESSO</span>
-            <h2>Como uma ideia<br />vira <em>produto.</em></h2>
-            <p>Um processo claro para transformar necessidades reais em soluções digitais que façam sentido para o negócio.</p>
-            <div className="process-progress"><span style={{ height: `${((activeProcess + 1) / processSteps.length) * 100}%` }} /></div>
-          </div>
-
-          <div className="process-story">
-            {processSteps.map((step, index) => (
-              <button
-                type="button"
-                className={`process-step ${activeProcess === index ? 'active' : ''} scroll-reveal`}
-                key={step.number}
-                onMouseEnter={() => setActiveProcess(index)}
-                onFocus={() => setActiveProcess(index)}
-                onClick={() => setActiveProcess(index)}
-                style={{ transitionDelay: `${index * 70}ms` }}
-              >
-                <span>{step.number}</span>
-                <div><h3>{step.title}</h3><p>{step.text}</p></div>
-                <ArrowUpRight size={18} />
+              <button type="submit" className="btn btn-primary btn-block">
+                <MessageCircle size={20} aria-hidden="true" /> Enviar pelo WhatsApp
               </button>
-            ))}
 
-            <div className="process-result glass-panel scroll-reveal">
-              <div className="result-path"><span>IDEIA</span><ChevronRight size={14} /><span>ESTRATÉGIA</span><ChevronRight size={14} /><span>PRODUTO</span><ChevronRight size={14} /><strong>EVOLUÇÃO</strong></div>
-              <div className="result-icon glass-circle"><Sparkles size={22} /></div>
-            </div>
+              <p className="form-note">
+                Vai abrir o WhatsApp com a mensagem pronta. É só tocar em enviar.
+              </p>
+              <p className="form-alt">
+                Prefere falar direto?{' '}
+                <a href={whatsapp(GENERIC_MESSAGE)} target="_blank" rel="noopener noreferrer">
+                  Abrir o WhatsApp
+                </a>
+              </p>
+            </form>
           </div>
-        </section>
-
-        <section className="tech-section page-section">
-          <div className="tech-copy scroll-reveal">
-            <span className="section-number">06 / TECNOLOGIA</span>
-            <h2>Ferramentas são<br />apenas parte da<br /><em>solução.</em></h2>
-            <p>Escolhemos a tecnologia de acordo com o problema. O objetivo não é usar mais ferramentas, mas construir a combinação certa.</p>
-          </div>
-
-          <div className="tech-map scroll-reveal">
-            <div className="tech-lines"><i /><i /><i /><i /></div>
-            <div className="tech-node glass-node node-center"><div className="tech-node-content"><Layers3 size={24} /><span>APORTE</span></div></div>
-            <div className="tech-node glass-node node-react"><div className="tech-node-content"><Code2 size={18} /><span>WEB</span></div></div>
-            <div className="tech-node glass-node node-data"><div className="tech-node-content"><Database size={18} /><span>DATA</span></div></div>
-            <div className="tech-node glass-node node-api"><div className="tech-node-content"><Network size={18} /><span>API</span></div></div>
-            <div className="tech-node glass-node node-auth"><div className="tech-node-content"><Zap size={18} /><span>AUTO</span></div></div>
-          </div>
-
-          <div className="tech-list scroll-reveal">
-            <span className="glass-chip">React</span><span className="glass-chip">TypeScript</span><span className="glass-chip">Supabase</span><span className="glass-chip">APIs</span><span className="glass-chip">Automação</span><span className="glass-chip">UX/UI</span>
-          </div>
-        </section>
-
-        <section id="consultar" className="contact-section">
-          <div className="contact-glow" />
-          <div className="contact-meta glass-chip scroll-reveal"><span>APORTE / CONSULTA DE PROJETO</span><span>2026</span></div>
-          <h2 className="scroll-reveal">Tem uma ideia<br />que merece <em>sair do papel?</em></h2>
-          <a className="contact-button glass-button scroll-reveal" href={whatsappLink} target="_blank" rel="noreferrer"><span>CONSULTAR UM PROJETO</span><Send size={18} /></a>
-          <p className="scroll-reveal">Conte o que você precisa. Vamos entender juntos qual é o próximo passo.</p>
         </section>
       </main>
 
       <footer className="site-footer">
-        <a href="#inicio" className="brand" aria-label="Voltar ao início">
-          <span className="brand-mark"><Sparkles size={15} /></span>
-          <span>APORTE<span className="brand-dot">.</span></span>
-        </a>
-        <span className="footer-note">Estratégia, design e tecnologia.</span>
-        <div className="footer-links">
-          <a href="#portfolio">Portfólio <ArrowUpRight size={12} /></a>
-          <a href={whatsappLink} target="_blank" rel="noreferrer">Contato <ArrowUpRight size={12} /></a>
+        <div className="wrap footer-inner">
+          <a href="#inicio" className="brand" aria-label="Aporte, voltar ao início">
+            APORTE<span className="brand-dot">.</span>
+          </a>
+          <span className="footer-note">Estratégia, design e tecnologia.</span>
+          <nav className="footer-links" aria-label="Rodapé">
+            <a href="#portfolio">Projetos</a>
+            <a href={whatsapp(GENERIC_MESSAGE)} target="_blank" rel="noopener noreferrer">WhatsApp</a>
+          </nav>
+          <span className="copyright">© {new Date().getFullYear()} Aporte</span>
         </div>
-        <span className="copyright">© {new Date().getFullYear()} APORTE</span>
       </footer>
+
+      <a
+        className={`dock${dockVisible ? ' is-visible' : ''}`}
+        href={whatsapp(GENERIC_MESSAGE)}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-hidden={!dockVisible}
+        tabIndex={dockVisible ? 0 : -1}
+      >
+        <MessageCircle size={22} aria-hidden="true" /> Falar no WhatsApp
+      </a>
     </div>
   )
 }
