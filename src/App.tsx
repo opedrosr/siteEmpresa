@@ -15,7 +15,6 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
-  Code2,
   Globe,
   Layers3,
   Menu,
@@ -23,6 +22,8 @@ import {
   X,
   Zap,
 } from 'lucide-react'
+
+import Hero from './components/Hero'
 
 // O 3D é pesado: só é baixado quando o usuário chega perto da seção.
 const Notebook3D = lazy(() => import('./components/Notebook3D'))
@@ -183,54 +184,6 @@ const featuresByKind: Record<KindId, Feature[]> = {
   duvida: [],
 }
 
-type IntentId = 'site' | 'sistema' | 'automacao' | 'projetos'
-
-type Intent = {
-  id: IntentId
-  icon: typeof Globe
-  label: string
-  cta: string
-  message: string
-  lines: string[]
-}
-
-const intents: Intent[] = [
-  {
-    id: 'site',
-    icon: Globe,
-    label: 'Criar um site',
-    cta: 'Ver como criamos sites',
-    message: services[0].message,
-    lines: ['$ aporte novo --site', '› pensado para o celular', '✓ pronto para ir ao ar'],
-  },
-  {
-    id: 'sistema',
-    icon: Layers3,
-    label: 'Ter um sistema',
-    cta: 'Ver como criamos sistemas',
-    message: services[1].message,
-    lines: ['$ aporte novo --sistema', '› tudo em um só lugar', '✓ operação sob controle'],
-  },
-  {
-    id: 'automacao',
-    icon: Zap,
-    label: 'Automatizar',
-    cta: 'Ver como automatizamos',
-    message: services[2].message,
-    lines: ['$ aporte novo --automacao', '› ferramentas conectadas', '✓ menos trabalho manual'],
-  },
-  {
-    id: 'projetos',
-    icon: Code2,
-    label: 'Ver projetos',
-    cta: 'Ir para os projetos',
-    message: 'Olá! Vi os projetos no site da Aporte e quero conversar.',
-    lines: ['$ aporte projetos --ver', `› ${projects.length} projetos reais`, '✓ telas e vídeos'],
-  },
-]
-
-const IDLE_LINES = ['$ o que vamos construir?', '› escolha uma opção acima']
-
 const processSteps = [
   { number: '01', title: 'Entendimento', text: 'Começamos entendendo o negócio, o objetivo e o problema que precisa ser resolvido.' },
   { number: '02', title: 'Estratégia', text: 'Definimos estrutura, experiência e tecnologia de acordo com o cenário real.' },
@@ -307,201 +260,6 @@ function DeferredMount({ children, minHeight }: { children: ReactNode; minHeight
   return (
     <div ref={ref} className="deferred" style={{ minHeight: ready ? undefined : minHeight }}>
       {ready ? children : null}
-    </div>
-  )
-}
-
-// Campo de sinal: grade de pontos que reage ao toque/mouse e "respira" sozinha quando ninguém mexe.
-function SignalField() {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-
-  useEffect(() => {
-    const canvas = canvasRef.current
-    const host = canvas?.parentElement
-    const ctx = canvas?.getContext('2d')
-    if (!canvas || !host || !ctx) return undefined
-
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    let w = 0
-    let h = 0
-    let gap = 32
-    let cols = 0
-    let rows = 0
-    let raf = 0
-    let running = false
-    let visible = true
-    const pointer = { x: 0, y: 0, mix: 0, down: false }
-
-    const resize = () => {
-      const rect = canvas.getBoundingClientRect()
-      const dpr = Math.min(window.devicePixelRatio || 1, 2)
-      w = rect.width
-      h = rect.height
-      canvas.width = Math.round(w * dpr)
-      canvas.height = Math.round(h * dpr)
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-      gap = w < 640 ? 26 : 34
-      cols = Math.ceil(w / gap) + 1
-      rows = Math.ceil(h / gap) + 1
-    }
-
-    const draw = (time: number) => {
-      const t = time / 1000
-      ctx.clearRect(0, 0, w, h)
-
-      // sem toque: o foco passeia sozinho
-      const roamX = w * (0.5 + 0.34 * Math.sin(t * 0.45))
-      const roamY = h * (0.42 + 0.24 * Math.cos(t * 0.33))
-      if (!pointer.down) pointer.mix = Math.max(0, pointer.mix - 0.006)
-      const m = Math.min(pointer.mix, 1)
-      const sx = roamX + (pointer.x - roamX) * m
-      const sy = roamY + (pointer.y - roamY) * m
-      const radius = w < 640 ? 150 : 230
-
-      const hot: { x: number; y: number }[] = []
-
-      for (let j = 0; j < rows; j += 1) {
-        for (let i = 0; i < cols; i += 1) {
-          const bx = i * gap
-          const by = j * gap
-          const dx = bx - sx
-          const dy = by - sy
-          const d = Math.sqrt(dx * dx + dy * dy) || 1
-          const k = Math.max(0, 1 - d / radius)
-          const push = k * k * 16
-          const x = bx + (dx / d) * push
-          const y = by + (dy / d) * push
-          const ripple = 0.5 + 0.5 * Math.sin(d * 0.04 - t * 2.4)
-          const alpha = 0.13 + k * (0.35 + 0.5 * ripple)
-          const size = 1.2 + k * 2.2
-
-          if (k > 0.08) {
-            ctx.fillStyle = `rgba(255,75,22,${Math.min(alpha + 0.1, 1)})`
-          } else {
-            ctx.fillStyle = `rgba(255,255,255,${alpha})`
-          }
-          ctx.fillRect(x - size / 2, y - size / 2, size, size)
-          if (k > 0.5 && hot.length < 70) hot.push({ x, y })
-        }
-      }
-
-      ctx.lineWidth = 1
-      for (let a = 0; a < hot.length; a += 1) {
-        for (let b = a + 1; b < hot.length; b += 1) {
-          const dx = hot[a].x - hot[b].x
-          const dy = hot[a].y - hot[b].y
-          const dist = Math.sqrt(dx * dx + dy * dy)
-          if (dist < gap * 1.6) {
-            ctx.strokeStyle = `rgba(255,75,22,${0.34 * (1 - dist / (gap * 1.6))})`
-            ctx.beginPath()
-            ctx.moveTo(hot[a].x, hot[a].y)
-            ctx.lineTo(hot[b].x, hot[b].y)
-            ctx.stroke()
-          }
-        }
-      }
-
-      // retícula e coordenadas no ponto de foco
-      if (m > 0.15) {
-        ctx.strokeStyle = `rgba(255,255,255,${0.5 * m})`
-        ctx.beginPath()
-        ctx.moveTo(sx - 12, sy)
-        ctx.lineTo(sx + 12, sy)
-        ctx.moveTo(sx, sy - 12)
-        ctx.lineTo(sx, sy + 12)
-        ctx.stroke()
-        ctx.font = "500 10px 'DM Mono', monospace"
-        ctx.fillStyle = `rgba(255,255,255,${0.6 * m})`
-        ctx.fillText(`x:${String(Math.round(sx)).padStart(4, '0')}  y:${String(Math.round(sy)).padStart(4, '0')}`, sx + 16, sy - 12)
-      }
-    }
-
-    const loop = (time: number) => {
-      if (!running) return
-      draw(time)
-      raf = requestAnimationFrame(loop)
-    }
-    const start = () => {
-      if (running || reduce || !visible || document.hidden) return
-      running = true
-      raf = requestAnimationFrame(loop)
-    }
-    const stop = () => {
-      running = false
-      cancelAnimationFrame(raf)
-    }
-
-    const setPointer = (event: PointerEvent) => {
-      const rect = canvas.getBoundingClientRect()
-      pointer.x = event.clientX - rect.left
-      pointer.y = event.clientY - rect.top
-      pointer.mix = 1
-      pointer.down = true
-    }
-    const release = () => {
-      pointer.down = false
-    }
-
-    resize()
-    if (reduce) draw(0)
-    start()
-
-    const observer = new IntersectionObserver(([entry]) => {
-      visible = entry.isIntersecting
-      if (visible) start()
-      else stop()
-    })
-    observer.observe(host)
-
-    const onVisibility = () => (document.hidden ? stop() : start())
-    const onResize = () => {
-      resize()
-      if (reduce) draw(0)
-    }
-
-    host.addEventListener('pointermove', setPointer, { passive: true })
-    host.addEventListener('pointerdown', setPointer, { passive: true })
-    host.addEventListener('pointerup', release)
-    host.addEventListener('pointerleave', release)
-    host.addEventListener('pointercancel', release)
-    window.addEventListener('resize', onResize)
-    document.addEventListener('visibilitychange', onVisibility)
-
-    return () => {
-      stop()
-      observer.disconnect()
-      host.removeEventListener('pointermove', setPointer)
-      host.removeEventListener('pointerdown', setPointer)
-      host.removeEventListener('pointerup', release)
-      host.removeEventListener('pointerleave', release)
-      host.removeEventListener('pointercancel', release)
-      window.removeEventListener('resize', onResize)
-      document.removeEventListener('visibilitychange', onVisibility)
-    }
-  }, [])
-
-  return <canvas ref={canvasRef} className="signal" aria-hidden="true" />
-}
-
-// Terminal decorativo: as linhas "digitam" sozinhas (CSS), sem timers em JavaScript.
-function Terminal({ lines }: { lines: string[] }) {
-  let delay = 0
-  return (
-    <div className="terminal" aria-live="polite">
-      {lines.map((line, index) => {
-        const start = delay
-        delay += line.length * 30 + 160
-        return (
-          <p
-            key={`${index}-${line}`}
-            className={index === 0 ? 'is-cmd' : ''}
-            style={{ '--n': line.length, '--d': `${start}ms` } as CSSProperties}
-          >
-            <span>{line}</span>
-          </p>
-        )
-      })}
-      <span className="caret" aria-hidden="true" />
     </div>
   )
 }
@@ -661,8 +419,6 @@ function App() {
   const [pastHero, setPastHero] = useState(false)
   const [atContact, setAtContact] = useState(false)
 
-  const [intent, setIntent] = useState<IntentId | null>(null)
-
   const [activeService, setActiveService] = useState(0)
   const [hintDone, setHintDone] = useState(false)
   const [dragging, setDragging] = useState(false)
@@ -678,7 +434,6 @@ function App() {
   const [name, setName] = useState('')
   const [message, setMessage] = useState('')
 
-  const heroRef = useRef<HTMLElement>(null)
   const progressRef = useRef<HTMLDivElement>(null)
   const galleryRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
@@ -688,7 +443,6 @@ function App() {
   const dotRef = useRef<HTMLDivElement>(null)
   const ringRef = useRef<HTMLDivElement>(null)
 
-  const currentIntent = intents.find(item => item.id === intent) ?? null
   const currentProject = projects[activeProject]
   const galleryTotal = currentProject.gallery.length
   const dockVisible = pastHero && !atContact && !menuOpen
@@ -791,25 +545,6 @@ function App() {
   useEffect(() => () => cancelAnimationFrame(trackFrame.current), [])
 
   /* ---------- escolha de caminho (início) ---------- */
-
-  const selectIntent = (id: IntentId) => {
-    setIntent(id)
-    if (id !== 'projetos') {
-      setKind(id)
-      setPicked([])
-    }
-  }
-
-  const continueIntent = (chosen: Intent) => {
-    if (chosen.id === 'projetos') {
-      goTo('portfolio')
-      return
-    }
-    const index = services.findIndex(service => service.id === chosen.id)
-    scrollToService(index, 'auto')
-    setActiveService(index)
-    goTo('servicos')
-  }
 
   const showExample = (projectIndex: number) => {
     setActiveProject(projectIndex)
@@ -946,26 +681,6 @@ function App() {
     )
     items.forEach(item => observer.observe(item))
     return () => observer.disconnect()
-  }, [])
-
-  // Paralaxe da logo no início (mouse e toque), sem re-renderizar o React.
-  useEffect(() => {
-    const hero = heroRef.current
-    if (!hero) return undefined
-    let frame = 0
-    const handleMove = (event: PointerEvent) => {
-      cancelAnimationFrame(frame)
-      frame = requestAnimationFrame(() => {
-        const rect = hero.getBoundingClientRect()
-        hero.style.setProperty('--mx', String(((event.clientX - rect.left) / rect.width - 0.5) * 2))
-        hero.style.setProperty('--my', String(((event.clientY - rect.top) / rect.height - 0.5) * 2))
-      })
-    }
-    hero.addEventListener('pointermove', handleMove, { passive: true })
-    return () => {
-      cancelAnimationFrame(frame)
-      hero.removeEventListener('pointermove', handleMove)
-    }
   }, [])
 
   // Cursor personalizado e botões magnéticos (só mouse; some com "reduzir movimento").
@@ -1191,98 +906,7 @@ function App() {
 
       <main id="conteudo">
         {/* ================================================ INÍCIO */}
-        <section id="inicio" className="hero" ref={heroRef}>
-          <SignalField />
-          <div className="hero-mark-wrap" aria-hidden="true">
-            <img className="hero-mark" src={LOGO_SRC} alt="" />
-          </div>
-          <div className="hero-shade" aria-hidden="true" />
-
-          <div className="hero-inner">
-            <div className="hero-copy">
-              <p className="hero-eyebrow reveal">
-                <span className="status-dot" aria-hidden="true" /> Software house · Brasil
-              </p>
-
-              <h1 className="hero-title">
-                <span className="line"><Words text="Ideias que" /></span>
-                <span className="line"><Words text="viram" from={2} /></span>
-                <span className="line"><em><Words text="sistemas." from={3} /></em></span>
-              </h1>
-
-              <p className="hero-lede reveal reveal-delay-3">
-                Criamos sites, sistemas e automações para empresas que querem evoluir sua presença e sua operação.
-              </p>
-            </div>
-
-            <div className="console reveal reveal-delay-4">
-              <div className="console-bar">
-                <span className="console-title"><i aria-hidden="true" /> aporte / console</span>
-                <span className="console-live"><b aria-hidden="true" /> online</span>
-              </div>
-
-              <p className="console-label" id="intent-label">O que você quer fazer?</p>
-              <div className="chips" role="group" aria-labelledby="intent-label">
-                {intents.map(item => {
-                  const Icon = item.icon
-                  const selected = intent === item.id
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      className={`chip${selected ? ' is-selected' : ''}`}
-                      aria-pressed={selected}
-                      onClick={() => selectIntent(item.id)}
-                    >
-                      <Icon size={18} aria-hidden="true" />
-                      {item.label}
-                    </button>
-                  )
-                })}
-              </div>
-
-              <Terminal key={intent ?? 'idle'} lines={currentIntent ? currentIntent.lines : IDLE_LINES} />
-
-              <div className="console-actions">
-                {currentIntent ? (
-                  <>
-                    <button type="button" className="btn btn-primary" data-magnetic onClick={() => continueIntent(currentIntent)}>
-                      {currentIntent.cta} <ArrowRight size={18} aria-hidden="true" />
-                    </button>
-                    <a
-                      className="btn btn-ghost"
-                      href={whatsapp(currentIntent.message)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <MessageCircle size={20} aria-hidden="true" /> WhatsApp
-                    </a>
-                  </>
-                ) : (
-                  <>
-                    <a
-                      className="btn btn-primary"
-                      data-magnetic
-                      href={whatsapp(GENERIC_MESSAGE)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <MessageCircle size={20} aria-hidden="true" /> Falar no WhatsApp
-                    </a>
-                    <a className="btn btn-ghost" href="#portfolio">
-                      Ver projetos <ArrowRight size={18} aria-hidden="true" />
-                    </a>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <a className="hero-scroll" href="#servicos" aria-label="Rolar para os serviços">
-            <span>role</span>
-            <i aria-hidden="true" />
-          </a>
-        </section>
+        <Hero logoSrc={LOGO_SRC} whatsappHref={whatsapp(GENERIC_MESSAGE)} />
 
         <div className="bands" aria-hidden="true">
           <Band tone="orange" />
