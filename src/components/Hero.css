@@ -1,0 +1,111 @@
+/* =========================================================
+   HERO (início) — minimalista, fundo branco, "aporte" líquido
+   CSS próprio do hero: não depende do index.css e não o altera.
+   Mobile-first: o que está fora de @media vale para o celular.
+   ========================================================= */
+
+.hf {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  min-height: 100svh;
+  padding: calc(var(--header-h, 60px) + 40px) 0 76px;
+  background: #ffffff;
+  color: #0a0a0b;
+  overflow: hidden;
+}
+
+.hf-inner {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 40px;
+  width: 100%;
+}
+
+/* nome */
+.hf-title {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding-block: 12px;
+}
+.hf-mark {
+  width: 100%;
+  max-width: 1180px;
+  height: auto;
+  overflow: visible;
+}
+.hf-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* frases e botões */
+.hf-bottom { display: grid; gap: 22px; }
+.hf-badge { display: none; }
+.hf-side { display: flex; flex-direction: column; gap: 20px; }
+.hf-copy { max-width: 36ch; color: #4a4a50; font-size: 15px; line-height: 1.65; }
+
+.hf-actions { display: flex; flex-direction: column; gap: 10px; }
+.hf-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 54px;
+  padding: 0 24px;
+  border: 1.5px solid transparent;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  transition: background .25s, color .25s, border-color .25s, transform .35s cubic-bezier(.2, .8, .2, 1);
+}
+.hf-btn:active { transform: scale(.98); }
+.hf-btn-dark { background: #0a0a0b; color: #ffffff; }
+.hf-btn-dark:hover { background: #ff5a1f; color: #0a0a0b; }
+.hf-btn-line { border-color: rgba(10, 10, 11, .28); background: transparent; color: #0a0a0b; }
+.hf-btn-line:hover { border-color: #0a0a0b; background: rgba(10, 10, 11, .04); }
+.hf-btn:focus-visible { outline: 3px solid #ff5a1f; outline-offset: 3px; }
+
+.hf-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(10, 10, 11, .12);
+  color: #6a6a70;
+  font: 500 12px/1.4 'DM Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  letter-spacing: .04em;
+}
+
+/* selo giratório (só em telas maiores, para o celular ficar limpo) */
+.hf-ring { width: 100%; height: 100%; animation: hf-spin 24s linear infinite; }
+.hf-ring text { fill: #0a0a0b; font: 500 9.5px 'DM Mono', ui-monospace, monospace; letter-spacing: .02em; }
+.hf-star { position: absolute; inset: 0; margin: auto; width: 26px; height: 26px; fill: #0a0a0b; }
+@keyframes hf-spin { to { transform: rotate(360deg); } }
+
+@media (min-width: 640px) {
+  .hf-actions { flex-direction: row; }
+  .hf-btn { min-width: 210px; }
+  .hf-copy { font-size: 16px; }
+}
+
+@media (min-width: 769px) {
+  .hf { padding-top: calc(var(--header-h, 64px) + 64px); padding-bottom: 90px; }
+  .hf-bottom { grid-template-columns: auto minmax(0, 460px); align-items: end; justify-content: space-between; gap: 48px; }
+  .hf-badge { position: relative; display: block; width: 124px; height: 124px; }
+  .hf-foot { padding-top: 20px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hf-ring { animation: none; }
+}

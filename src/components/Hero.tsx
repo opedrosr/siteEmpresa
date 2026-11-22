@@ -1,97 +1,164 @@
+import { useEffect, useRef } from 'react'
 import { ArrowUpRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import { SITE } from '../data/site'
+import './hero.css'
 
-// Início: estático e leve. O fundo de fogo/fumaça é um SVG (sem imagem, sem canvas, sem 3D).
+// Início minimalista: fundo branco e o nome "aporte" desenhado em traço, com um filtro "líquido":
+// as letras se mexem devagar e, quando se aproximam, se ligam por pontes de tinta (como no logo da referência).
 // Contém o <h1> da home.
+
+const STROKE = 34
+const R = 64
+const GAP = 16
+
+type Letter = {
+  key: string
+  width: number
+  paths: string[]
+  circle?: boolean
+  move: { x: number; y: number; dur: number }
+}
+
+// Cada letra é desenhada a partir da sua borda esquerda (x = 0).
+const letters: Letter[] = [
+  { key: 'a', width: 162, circle: true, paths: ['M 145 166 V 294'], move: { x: -6, y: 2, dur: 7.2 } },
+  { key: 'p', width: 162, circle: true, paths: ['M 17 166 V 400'], move: { x: 5, y: -3, dur: 8.4 } },
+  { key: 'o', width: 162, circle: true, paths: [], move: { x: -5, y: 3, dur: 6.6 } },
+  { key: 'r', width: 107, paths: ['M 17 166 V 294', 'M 17 232 C 17 192 47 166 90 166'], move: { x: 7, y: -2, dur: 9.1 } },
+  {
+    key: 't',
+    width: 129,
+    paths: ['M 64 112 V 258 C 64 282 80 294 108 294', 'M 17 166 H 112'],
+    move: { x: -7, y: 3, dur: 7.8 },
+  },
+  { key: 'e', width: 162, paths: ['M 17 230 H 145 A 64 64 0 1 0 126.3 275.3'], move: { x: 6, y: -3, dur: 8.9 } },
+]
+
+const SPLINE = { calcMode: 'spline', keyTimes: '0;0.5;1', keySplines: '0.45 0 0.55 1;0.45 0 0.55 1' } as const
+
+function offsets() {
+  let x = 0
+  return letters.map(letter => {
+    const at = x
+    x += letter.width + GAP
+    return at
+  })
+}
+
+const pillars = ['Sites', 'Sistemas', 'Automação']
+
 export default function Hero({ whatsappHref }: { logoSrc?: string; whatsappHref: string }) {
+  const markRef = useRef<SVGSVGElement>(null)
+  const xs = offsets()
+
+  // Pausa o movimento quando o hero sai da tela (poupa bateria no celular) e respeita "reduzir movimento".
+  useEffect(() => {
+    const svg = markRef.current
+    if (!svg) return undefined
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      svg.pauseAnimations()
+      return undefined
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) svg.unpauseAnimations()
+      else svg.pauseAnimations()
+    })
+    observer.observe(svg)
+    return () => observer.disconnect()
+  }, [])
+
   return (
-    <section id="inicio" className="h2" aria-labelledby="h2-title">
-      <div className="h2-bg" aria-hidden="true">
-        <div className="h2-smoke">
-          <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" focusable="false">
+    <section id="inicio" className="hf" aria-labelledby="hf-title">
+      <div className="wrap hf-inner">
+        <h1 id="hf-title" className="hf-title">
+          <svg ref={markRef} className="hf-mark" viewBox="-18 76 1000 356" aria-hidden="true" focusable="false">
             <defs>
-              <filter id="h2-fire" x="-25%" y="-25%" width="150%" height="150%" colorInterpolationFilters="sRGB">
-                <feTurbulence type="fractalNoise" baseFrequency="0.0045 0.009" numOctaves="3" seed="11" result="big" />
-                <feDisplacementMap in="SourceGraphic" in2="big" scale="150" xChannelSelector="R" yChannelSelector="G" result="d1" />
-                <feTurbulence type="fractalNoise" baseFrequency="0.018 0.03" numOctaves="3" seed="4" result="fine" />
-                <feDisplacementMap in="d1" in2="fine" scale="38" xChannelSelector="G" yChannelSelector="R" result="d2" />
-                <feGaussianBlur in="d2" stdDeviation="9" />
-              </filter>
-              <filter id="h2-haze" x="-30%" y="-30%" width="160%" height="160%">
-                <feGaussianBlur stdDeviation="60" />
+              <filter id="hf-goo" x="-4%" y="-8%" width="108%" height="116%" colorInterpolationFilters="sRGB">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur" />
+                <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 26 -10" />
               </filter>
             </defs>
 
-            <g filter="url(#h2-haze)" opacity=".75">
-              <ellipse cx="760" cy="470" rx="520" ry="210" fill="#7a1a00" />
-              <ellipse cx="1150" cy="330" rx="380" ry="150" fill="#b8300a" opacity=".6" />
-            </g>
+            <g
+              filter="url(#hf-goo)"
+              fill="none"
+              stroke="#0a0a0b"
+              strokeWidth={STROKE}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              {letters.map((letter, index) => (
+                <g key={letter.key} transform={`translate(${xs[index]} 0)`}>
+                  <g>
+                    <animateTransform
+                      attributeName="transform"
+                      type="translate"
+                      values={`0 0;${letter.move.x} ${letter.move.y};0 0`}
+                      dur={`${letter.move.dur}s`}
+                      repeatCount="indefinite"
+                      {...SPLINE}
+                    />
+                    {letter.circle && <circle cx={81} cy={230} r={R} />}
+                    {letter.paths.map(d => (
+                      <path key={d} d={d} />
+                    ))}
+                  </g>
+                </g>
+              ))}
 
-            <g filter="url(#h2-fire)" fill="none" strokeLinecap="round">
-              <g stroke="#a82a05" strokeWidth="150" opacity=".7">
-                <path d="M -100 640 C 250 520, 470 720, 780 530 S 1200 340, 1700 400" />
-                <path d="M 320 410 C 620 250, 820 540, 1120 370 S 1420 300, 1700 210" />
-              </g>
-              <g stroke="#ff5a1f" strokeWidth="60" opacity=".92">
-                <path d="M -100 640 C 250 520, 470 720, 780 530 S 1200 340, 1700 400" />
-                <path d="M 320 410 C 620 250, 820 540, 1120 370 S 1420 300, 1700 210" />
-                <path d="M 500 770 C 800 700, 1000 650, 1300 705 S 1560 650, 1700 570" opacity=".7" />
-              </g>
-              <g stroke="#ffb347" strokeWidth="18" opacity=".95">
-                <path d="M -100 640 C 250 520, 470 720, 780 530 S 1200 340, 1700 400" />
-                <path d="M 320 410 C 620 250, 820 540, 1120 370 S 1420 300, 1700 210" />
-              </g>
-              <g stroke="#fff1cf" strokeWidth="5" opacity=".85">
-                <path d="M 120 600 C 330 540, 500 690, 780 530 S 1080 400, 1300 380" />
-              </g>
+              {/* gota que passa entre as letras e faz as pontes de líquido */}
+              <circle cy={236} r={15} fill="#0a0a0b" stroke="none">
+                <animate
+                  attributeName="cx"
+                  values="-8;960;-8"
+                  dur="16s"
+                  repeatCount="indefinite"
+                  calcMode="spline"
+                  keyTimes="0;0.5;1"
+                  keySplines="0.4 0 0.6 1;0.4 0 0.6 1"
+                />
+              </circle>
             </g>
           </svg>
-        </div>
-        <span className="h2-shade" />
-      </div>
-
-      <div className="wrap h2-inner">
-        <h1 id="h2-title" className="h2-title">
-          Aporte
-          <span className="h2-sr"> — software house: sites, sistemas e automação</span>
+          <span className="hf-sr">Aporte — software house: sites, sistemas e automação</span>
         </h1>
 
-        <div className="h2-bottom">
-          <div className="h2-badge" aria-hidden="true">
-            <svg className="h2-ring" viewBox="0 0 120 120">
+        <div className="hf-bottom">
+          <div className="hf-badge" aria-hidden="true">
+            <svg className="hf-ring" viewBox="0 0 120 120">
               <defs>
-                <path id="h2-circle" d="M 60 60 m -47 0 a 47 47 0 1 1 94 0 a 47 47 0 1 1 -94 0" />
+                <path id="hf-circle" d="M 60 60 m -47 0 a 47 47 0 1 1 94 0 a 47 47 0 1 1 -94 0" />
               </defs>
               <text>
-                <textPath href="#h2-circle" textLength="288" lengthAdjust="spacing">
-                  SITES ✦ SISTEMAS ✦ AUTOMAÇÃO ✦
+                <textPath href="#hf-circle" textLength="288" lengthAdjust="spacing">
+                  {pillars.map(item => item.toUpperCase()).join(' ✦ ')} ✦
                 </textPath>
               </text>
             </svg>
-            <svg className="h2-star" viewBox="0 0 24 24">
+            <svg className="hf-star" viewBox="0 0 24 24">
               <path d="M12 1.5c.7 5.6 4.9 9.8 10.5 10.5-5.6.7-9.8 4.9-10.5 10.5C11.3 16.9 7.1 12.7 1.5 12 7.1 11.3 11.3 7.1 12 1.5Z" />
             </svg>
           </div>
 
-          <div className="h2-side">
-            <p className="h2-copy">
+          <div className="hf-side">
+            <p className="hf-copy">
               Estratégia, design e tecnologia. Sites, sistemas e automações pensados de acordo com o estágio, o objetivo
               e a necessidade de cada empresa.
             </p>
-            <div className="h2-actions">
-              <Link className="h2-btn h2-btn-light" to="/orcamento" data-magnetic>
-                Pedir orçamento <ArrowUpRight size={15} aria-hidden="true" />
+            <div className="hf-actions">
+              <Link className="hf-btn hf-btn-dark" to="/orcamento" data-magnetic>
+                Pedir orçamento <ArrowUpRight size={16} aria-hidden="true" />
               </Link>
-              <a className="h2-btn h2-btn-glass" href={whatsappHref} target="_blank" rel="noopener noreferrer">
+              <a className="hf-btn hf-btn-line" href={whatsappHref} target="_blank" rel="noopener noreferrer">
                 Falar no WhatsApp
               </a>
             </div>
           </div>
         </div>
 
-        <p className="h2-foot">
+        <p className="hf-foot">
           <i className="status-dot" aria-hidden="true" /> Disponível para novos projetos · {SITE.address.locality},{' '}
           {SITE.address.region}
         </p>
