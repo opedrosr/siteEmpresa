@@ -13,8 +13,6 @@ const icons: Record<string, typeof Globe> = {
   automacao: Zap,
 }
 
-const pad = (n: number) => String(n).padStart(2, '0')
-
 // Card de vidro: janela com o título, cartão escuro com o resumo e o botão do WhatsApp flutuando.
 export default function ServiceCard({
   service,
@@ -44,9 +42,6 @@ export default function ServiceCard({
           <Demo kind={service.demo} />
         </div>
         <span className="gc-shade" aria-hidden="true" />
-        <span className="gc-index" aria-hidden="true">
-          {pad(index + 1)} / {pad(total)}
-        </span>
         <WhatsAppLink className="gc-orb" message={service.message}>
           <MessageCircle size={22} aria-hidden="true" />
           <span className="sr-only">Falar sobre {service.name} no WhatsApp</span>

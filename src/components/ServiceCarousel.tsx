@@ -12,7 +12,6 @@ import ServiceCard from './ServiceCard'
 
 export default function ServiceCarousel() {
   const [activeService, setActiveService] = useState(0)
-  const [hintDone, setHintDone] = useState(false)
   const [dragging, setDragging] = useState(false)
 
   const trackRef = useRef<HTMLDivElement>(null)
@@ -49,7 +48,6 @@ export default function ServiceCarousel() {
       const track = trackRef.current
       if (!track) return
       setActiveService(nearestService())
-      if (track.scrollLeft > 12) setHintDone(true)
     })
   }
 
@@ -113,14 +111,6 @@ export default function ServiceCarousel() {
   return (
     <div className="carousel">
       <div className="wrap carousel-top">
-        <p className={`swipe-hint${hintDone ? ' is-done' : ''}`} aria-hidden="true">
-          Arraste para o lado
-          <span className="swipe-arrows" aria-hidden="true">
-            <ChevronRight size={16} />
-            <ChevronRight size={16} />
-            <ChevronRight size={16} />
-          </span>
-        </p>
         <div className="carousel-arrows">
           <button
             type="button"

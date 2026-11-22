@@ -1,12 +1,11 @@
 import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
-import Band from '../components/Band'
 import CtaBand from '../components/CtaBand'
 import FaqList from '../components/FaqList'
 import Hero from '../components/Hero'
 import PostCard from '../components/PostCard'
-import ProjectCard from '../components/ProjectCard'
+import ProjectsShowcase from '../components/ProjectsShowcase'
 import ResultsPanel from '../components/ResultsPanel'
 import Reveal from '../components/Reveal'
 import SectionHead from '../components/SectionHead'
@@ -15,18 +14,12 @@ import ServiceCarousel from '../components/ServiceCarousel'
 import StepsRow from '../components/StepsRow'
 import { generalFaq, principles } from '../data/content'
 import { posts } from '../data/posts'
-import { projects } from '../data/projects'
 import { GENERIC_MESSAGE, SITE, whatsapp } from '../data/site'
 
 export default function Home() {
   return (
     <>
       <Hero logoSrc={SITE.logo} whatsappHref={whatsapp(GENERIC_MESSAGE)} />
-
-      <div className="bands" aria-hidden="true">
-        <Band tone="orange" />
-        <Band tone="ink" reverse />
-      </div>
 
       <ScrollStory />
 
@@ -55,10 +48,8 @@ export default function Home() {
             accent="reais."
             lede="Uma seleção do que já foi construído pela Aporte."
           />
-          <Reveal className="case-grid">
-            {projects.map(project => (
-              <ProjectCard key={project.slug} project={project} />
-            ))}
+          <Reveal>
+            <ProjectsShowcase />
           </Reveal>
           <div className="section-actions">
             <Link className="btn btn-line" to="/projetos">

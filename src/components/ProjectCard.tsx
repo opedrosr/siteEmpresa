@@ -5,15 +5,12 @@ import type { Project } from '../data/projects'
 
 export default function ProjectCard({ project }: { project: Project }) {
   return (
-    <article className="case-card">
-      <div className="case-media">
-        <img src={project.image} alt={project.imageAlt} loading="lazy" decoding="async" />
-        <span className="case-num">{project.id}</span>
-      </div>
-      <div className="case-body">
-        <span className="project-type">{project.type}</span>
+    <article className="pk-card">
+      <img className="pk-img" src={project.image} alt={project.imageAlt} loading="lazy" decoding="async" />
+      <div className="pk-body">
+        <span className="pk-type">{project.type}</span>
         <h3>
-          <Link to={`/projetos/${project.slug}`} className="case-link">
+          <Link to={`/projetos/${project.slug}`} className="pk-link">
             {project.name}
           </Link>
         </h3>
@@ -23,8 +20,8 @@ export default function ProjectCard({ project }: { project: Project }) {
             <li key={tag}>{tag}</li>
           ))}
         </ul>
-        <span className="case-more" aria-hidden="true">
-          Ver projeto <ArrowUpRight size={18} />
+        <span className="pk-more" aria-hidden="true">
+          Ver projeto <ArrowUpRight size={16} />
         </span>
       </div>
     </article>
