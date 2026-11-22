@@ -3,7 +3,7 @@ import { ArrowUpRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import { SITE } from '../data/site'
-import './hero.css'
+import './Hero.css'
 
 // Início minimalista: fundo branco e o nome "aporte" desenhado em traço, com um filtro "líquido":
 // as letras se mexem devagar e, quando se aproximam, se ligam por pontes de tinta (como no logo da referência).
