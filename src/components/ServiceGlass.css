@@ -1,0 +1,221 @@
+/* =========================================================
+   SERVIÇOS — glassmorphism líquido, transparente e minimalista
+   CSS próprio do carrossel: não altera o index.css.
+   Mobile-first: o que está fora de @media vale para o celular.
+   ========================================================= */
+
+/* some o fundo de manchas da versão anterior */
+.carousel.sg-carousel::before { content: none; }
+
+/* painel colorido: é o "fundo" que o vidro desfoca */
+.sg-stage {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  margin: 4px 10px 0;
+  padding: 26px 0 16px;
+  border-radius: 34px;
+  background: #120807;
+}
+
+.sg-bg {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  overflow: hidden;
+  background: radial-gradient(120% 90% at 15% 0%, #4a1a0a 0%, #1b0907 55%, #0d0504 100%);
+}
+.sg-blob { position: absolute; border-radius: 50%; filter: blur(40px); will-change: transform; }
+.sg-b1 {
+  left: -20%; top: -15%; width: min(80%, 640px); aspect-ratio: 1;
+  background: radial-gradient(circle at 40% 40%, #ff7b2e, #c2410c 55%, transparent 74%);
+  animation: sg-drift-a 19s ease-in-out infinite alternate;
+}
+.sg-b2 {
+  right: -18%; top: 22%; width: min(70%, 560px); aspect-ratio: 1;
+  background: radial-gradient(circle at 50% 50%, #ffb26b, #e05a1f 55%, transparent 74%);
+  animation: sg-drift-b 23s ease-in-out infinite alternate;
+}
+.sg-b3 {
+  left: 36%; top: -20%; width: min(32%, 300px); height: 140%; filter: blur(34px);
+  background: linear-gradient(180deg, rgba(232, 242, 255, .95), rgba(188, 208, 236, .8) 55%, rgba(255, 226, 196, .15));
+  transform: rotate(14deg);
+  animation: sg-stream 17s ease-in-out infinite alternate;
+}
+.sg-b4 {
+  left: 4%; bottom: -34%; width: min(60%, 480px); aspect-ratio: 1;
+  background: radial-gradient(circle, #8a2410, transparent 72%);
+  animation: sg-drift-b 27s ease-in-out infinite alternate-reverse;
+}
+@keyframes sg-drift-a { to { transform: translate3d(16%, 12%, 0) scale(1.16); } }
+@keyframes sg-drift-b { to { transform: translate3d(-14%, -10%, 0) scale(1.12); } }
+@keyframes sg-stream {
+  from { transform: translate3d(-10%, 0, 0) rotate(10deg) scaleX(.9); }
+  to { transform: translate3d(12%, 6%, 0) rotate(22deg) scaleX(1.15); }
+}
+
+/* trilho e régua dentro do painel */
+.sg-stage .carousel-track { --card-w: min(80vw, 340px); gap: 0; padding-block: 6px 18px; }
+.sg-stage .ruler { margin-top: 0; }
+
+/* ---------- o cartão de vidro ---------- */
+.sg {
+  position: relative;
+  flex: 0 0 var(--card-w);
+  scroll-snap-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 20px;
+  margin-inline: 7px;
+  padding: 18px 22px 18px;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .4);
+  border-radius: 30px;
+  background: linear-gradient(150deg, rgba(255, 255, 255, .2) 0%, rgba(255, 255, 255, .05) 38%, rgba(255, 255, 255, .04) 62%, rgba(255, 255, 255, .14) 100%);
+  -webkit-backdrop-filter: blur(26px) saturate(1.6) brightness(1.08);
+  backdrop-filter: blur(26px) saturate(1.6) brightness(1.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .6),
+    inset 0 -1px 0 rgba(255, 255, 255, .14),
+    inset 0 0 34px rgba(255, 255, 255, .06),
+    0 30px 60px -34px rgba(0, 0, 0, .7);
+  color: #ffffff;
+  opacity: .62;
+  transform: scale(.94);
+  transition: opacity .4s, transform .55s cubic-bezier(.2, .8, .2, 1);
+}
+.sg.is-active { opacity: 1; transform: none; }
+.sg > * { position: relative; z-index: 1; }
+
+/* brilho de vidro (reflexo no canto) e um reflexo que passa devagar */
+.sg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(90% 55% at 8% 0%, rgba(255, 255, 255, .34), transparent 58%);
+}
+.sg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, .16) 50%, transparent 62%);
+  background-size: 260% 100%;
+  background-position: 130% 0;
+}
+.sg.is-active::after { animation: sg-glint 8s ease-in-out infinite; }
+@keyframes sg-glint {
+  0%, 35% { background-position: 130% 0; }
+  70%, 100% { background-position: -30% 0; }
+}
+
+/* conteúdo */
+.sg-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.sg-label { color: rgba(255, 255, 255, .88); font: 500 15px/1 var(--display, 'Manrope', system-ui, sans-serif); letter-spacing: .01em; }
+.sg-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  margin-right: -2px;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 500;
+}
+.sg-link svg { transition: transform .35s cubic-bezier(.2, .8, .2, 1); }
+.sg-link:hover svg { transform: translateX(4px); }
+
+.sg-body { display: flex; flex-direction: column; gap: 14px; }
+.sg-title {
+  font: 500 clamp(1.7rem, 7.6vw, 2.2rem)/1.02 var(--display, 'Manrope', system-ui, sans-serif);
+  letter-spacing: -.03em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+.sg-text {
+  max-width: 30ch;
+  color: rgba(255, 255, 255, .84);
+  font-size: 14px;
+  line-height: 1.55;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.sg-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.sg-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid rgba(255, 255, 255, .7);
+  border-radius: 999px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background .25s, border-color .25s;
+}
+.sg-chip:hover { background: rgba(255, 255, 255, .16); border-color: #ffffff; }
+.sg-link:focus-visible, .sg-chip:focus-visible { outline: 2px solid #ffffff; outline-offset: 3px; }
+.sg-meta { padding-bottom: 14px; color: rgba(255, 255, 255, .85); font-size: 13px; text-align: right; }
+
+/* régua em tom de vidro */
+.ruler.is-glass {
+  border-color: rgba(255, 255, 255, .32);
+  background: rgba(255, 255, 255, .1);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .4);
+}
+.ruler.is-glass .ruler-top { color: rgba(255, 255, 255, .75); }
+.ruler.is-glass .ruler-top b { color: #ffffff; }
+.ruler.is-glass .ruler-ticks i { background: rgba(255, 255, 255, .4); }
+.ruler.is-glass .ruler-ticks i.is-major { background: rgba(255, 255, 255, .78); }
+.ruler.is-glass .ruler-num { color: rgba(255, 255, 255, .6); }
+.ruler.is-glass .ruler-num.is-active { color: #ffffff; }
+
+@media (min-width: 769px) {
+  .sg-stage {
+    width: min(calc(100% - 48px), 1240px);
+    margin: 4px auto 0;
+    padding: 44px 0 28px;
+    border-radius: 44px;
+  }
+  .sg-stage .carousel-track { --card-w: 400px; padding-block: 6px 24px; }
+  .sg { margin-inline: 12px; padding: 22px 26px 22px; border-radius: 34px; }
+  .sg-title { font-size: clamp(2rem, 2.6vw, 2.4rem); }
+  .sg-text { font-size: 15px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sg-blob, .sg.is-active::after { animation: none; }
+}
+
+/* ---------- paleta "rosé" (carrossel de artigos) ---------- */
+.sg-stage.is-rose { background: #14070b; }
+.sg-stage.is-rose .sg-bg { background: radial-gradient(120% 90% at 85% 0%, #4a1022 0%, #1b0810 55%, #0d0407 100%); }
+.sg-stage.is-rose .sg-b1 { background: radial-gradient(circle at 40% 40%, #ff6f8e, #b3123f 55%, transparent 74%); }
+.sg-stage.is-rose .sg-b2 { background: radial-gradient(circle at 50% 50%, #ffb7a0, #e0483a 55%, transparent 74%); }
+.sg-stage.is-rose .sg-b4 { background: radial-gradient(circle, #6a0f2c, transparent 72%); }
+
+/* títulos de artigo costumam ser longos: um pouco menores e sem caixa alta */
+.sg-title.sg-title-post {
+  font-size: clamp(1.35rem, 5.8vw, 1.75rem);
+  line-height: 1.12;
+  letter-spacing: -.025em;
+  text-transform: none;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+@media (min-width: 769px) {
+  .sg-title.sg-title-post { font-size: clamp(1.5rem, 2vw, 1.9rem); }
+}

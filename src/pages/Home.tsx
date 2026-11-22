@@ -15,6 +15,7 @@ import StepsRow from '../components/StepsRow'
 import { generalFaq, principles } from '../data/content'
 import { posts } from '../data/posts'
 import { GENERIC_MESSAGE, SITE, whatsapp } from '../data/site'
+import PostCarousel from '../components/PostCarousel'
 
 export default function Home() {
   return (

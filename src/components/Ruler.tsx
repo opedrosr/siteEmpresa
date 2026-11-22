@@ -11,12 +11,14 @@ export default function Ruler({
   onSelect,
   label,
   ariaLabel,
+  tone,
 }: {
   count: number
   active: number
   onSelect: (index: number) => void
   label: string
   ariaLabel: string
+  tone?: 'light' | 'glass'
 }) {
   const trackRef = useRef<HTMLDivElement>(null)
   const dragging = useRef(false)
@@ -64,7 +66,7 @@ export default function Ruler({
   }
 
   return (
-    <div className="ruler">
+    <div className={`ruler${tone === 'glass' ? ' is-glass' : ''}`}>
       <div className="ruler-top">
         <span>{label}</span>
         <b>

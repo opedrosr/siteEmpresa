@@ -9,9 +9,11 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { services } from '../data/services'
 import Ruler from './Ruler'
 import ServiceCard from './ServiceCard'
+import './ServiceGlass.css'
 
 export default function ServiceCarousel() {
   const [activeService, setActiveService] = useState(0)
+  const [hintDone, setHintDone] = useState(false)
   const [dragging, setDragging] = useState(false)
 
   const trackRef = useRef<HTMLDivElement>(null)
@@ -48,6 +50,7 @@ export default function ServiceCarousel() {
       const track = trackRef.current
       if (!track) return
       setActiveService(nearestService())
+      if (track.scrollLeft > 12) setHintDone(true)
     })
   }
 
@@ -109,8 +112,16 @@ export default function ServiceCarousel() {
   useEffect(() => () => cancelAnimationFrame(trackFrame.current), [])
 
   return (
-    <div className="carousel">
+    <div className="carousel sg-carousel">
       <div className="wrap carousel-top">
+        <p className={`swipe-hint${hintDone ? ' is-done' : ''}`} aria-hidden="true">
+          Arraste para o lado
+          <span className="swipe-arrows" aria-hidden="true">
+            <ChevronRight size={16} />
+            <ChevronRight size={16} />
+            <ChevronRight size={16} />
+          </span>
+        </p>
         <div className="carousel-arrows">
           <button
             type="button"
@@ -133,38 +144,47 @@ export default function ServiceCarousel() {
         </div>
       </div>
 
-      <div
-        ref={trackRef}
-        className={`carousel-track${dragging ? ' is-dragging' : ''}`}
-        role="region"
-        aria-roledescription="carrossel"
-        aria-label="Serviços da Aporte"
-        data-cursor="arraste"
-        tabIndex={0}
-        onScroll={handleTrackScroll}
-        onPointerDown={handleTrackPointerDown}
-        onClickCapture={handleTrackClickCapture}
-        onKeyDown={handleTrackKeyDown}
-      >
-        {services.map((service, index) => (
-          <ServiceCard
-            key={service.slug}
-            service={service}
-            index={index}
-            total={services.length}
-            active={activeService === index}
-            offset={index - activeService}
-          />
-        ))}
-      </div>
+      <div className="sg-stage">
+        <div className="sg-bg" aria-hidden="true">
+          <span className="sg-blob sg-b1" />
+          <span className="sg-blob sg-b2" />
+          <span className="sg-blob sg-b3" />
+          <span className="sg-blob sg-b4" />
+        </div>
 
-      <Ruler
-        count={services.length}
-        active={activeService}
-        onSelect={index => scrollToService(index)}
-        label="Serviços"
-        ariaLabel="Escolher serviço"
-      />
+        <div
+          ref={trackRef}
+          className={`carousel-track${dragging ? ' is-dragging' : ''}`}
+          role="region"
+          aria-roledescription="carrossel"
+          aria-label="Serviços da Aporte"
+          data-cursor="arraste"
+          tabIndex={0}
+          onScroll={handleTrackScroll}
+          onPointerDown={handleTrackPointerDown}
+          onClickCapture={handleTrackClickCapture}
+          onKeyDown={handleTrackKeyDown}
+        >
+          {services.map((service, index) => (
+            <ServiceCard
+              key={service.slug}
+              service={service}
+              index={index}
+              total={services.length}
+              active={activeService === index}
+            />
+          ))}
+        </div>
+
+        <Ruler
+          tone="glass"
+          count={services.length}
+          active={activeService}
+          onSelect={index => scrollToService(index)}
+          label="Serviços"
+          ariaLabel="Escolher serviço"
+        />
+      </div>
     </div>
   )
 }
